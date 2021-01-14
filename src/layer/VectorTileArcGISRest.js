@@ -3,7 +3,10 @@ import stylefunction from 'ol-mapbox-style/src/stylefunction';
 
 export default class VectorTileArcGISRest extends VectorTile {
   constructor(options) {
+    const visible = typeof(options.visible) === 'undefined' ? true : options.visible;
+    options.visible = false;
     super(options);
+    this.visible = visible;
     this.source = options.source;
     this.withCredentials = options.withCredentials || false;
     this.headers = options.headers || {};
@@ -38,6 +41,7 @@ export default class VectorTileArcGISRest extends VectorTile {
       .then(data => {
         const style = this._getStyle(styleJson, sourceName, resolutions, data, spriteImageUrl);
         this.setStyle(style);
+        this.setVisible(this.visible);
       })
       .catch(e => {
         console.error('load sprite error', e);
