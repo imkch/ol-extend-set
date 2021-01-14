@@ -8,14 +8,14 @@ export default class VectorTileArcGISRest extends VectorTile {
     super(options);
     this.visible = visible;
     this.source = options.source;
-    this.withCredentials = options.withCredentials || false;
+    this.credentials = options.withCredentials ? 'include' : 'omit';
     this.headers = options.headers || {};
     this._styleLoadFunction();
   }
   _styleLoadFunction() {
-    const { source, withCredentials, headers } = this;
+    const { source, credentials, headers } = this;
     const styleUrl = `${source.baseUrl}/style.json`;
-    fetch(styleUrl, { headers, withCredentials })
+    fetch(styleUrl, { headers, credentials })
       .then(response => response.json())
       .then(data => {
         this._loadStyle(data);
@@ -25,7 +25,7 @@ export default class VectorTileArcGISRest extends VectorTile {
       })
   }
   _loadStyle(styleJson) {
-    const { source, withCredentials, headers } = this;
+    const { source, credentials, headers } = this;
     const spriteScale = window.devicePixelRatio >= 1.5 ? 0.5 : 1;
     const sizeFactor = spriteScale === 0.5 ? '@2x' : '';
     const sourceName = Object.keys(styleJson.sources)[0];
@@ -36,7 +36,7 @@ export default class VectorTileArcGISRest extends VectorTile {
     this.setStyle(style);
     
     const spriteUrl = styleJson.sprite + sizeFactor + '.json';
-    fetch(spriteUrl, { headers, withCredentials })
+    fetch(spriteUrl, { headers, credentials })
       .then(response => response.json())
       .then(data => {
         const style = this._getStyle(styleJson, sourceName, resolutions, data, spriteImageUrl);
