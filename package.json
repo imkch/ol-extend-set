@@ -18,7 +18,8 @@
   "license": "MIT",
   "dependencies": {
     "ol": "^6.5.0",
-    "ol-mapbox-style": "^6.3.0"
+    "ol-mapbox-style": "^6.3.0",
+    "proj4": "^2.6.3"
   },
   "devDependencies": {
     "@babel/core": "^7.12.10",
