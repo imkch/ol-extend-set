@@ -33,7 +33,7 @@ export default {
         target: 'map',
         view: new View({
           center: [0, 0],
-          zoom: 2,
+          zoom: 6,
           projection: 'EPSG:4490'
         }),
         layers: [
@@ -48,6 +48,6 @@ export default {
 </script>
 <style>
 #map {
-  height: 300px;
+  height: 500px;
 }
 </style>

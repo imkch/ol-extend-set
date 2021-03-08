@@ -40,6 +40,6 @@ export default {
 </script>
 <style>
 #map {
-  height: 300px;
+  height: 500px;
 }
 </style>
