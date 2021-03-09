@@ -2,7 +2,7 @@ import TileLayer from 'ol/layer/Tile';
 import WMTSSource, { optionsFromCapabilities } from 'ol/source/WMTS';
 import WMTSCapabilities from 'ol/format/WMTSCapabilities';
 
-export default class WMTS extends TileLayer {
+export default class TileWMTS extends TileLayer {
   constructor(options) {
     const source = options.source;
     source && delete options.source
@@ -45,7 +45,6 @@ export default class WMTS extends TileLayer {
           }
         }
         const options = optionsFromCapabilities(result, { layer, matrixSet, style, urls });
-        console.log(options);
         this.setSource(new WMTSSource(options));
       });
   }

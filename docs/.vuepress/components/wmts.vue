@@ -5,7 +5,7 @@
 import 'ol/ol.css';
 import Map from 'ol/Map';
 import View from 'ol/View';
-import WMTSLayer from 'ol-extend-set/layer/WMTS';
+import TileWMTSLayer from 'ol-extend-set/layer/TileWMTS';
 import WMTSSource from 'ol/source/WMTS';
 
 export default {
@@ -29,7 +29,7 @@ export default {
           projection: 'EPSG:3857'
         }),
         layers: [
-          new WMTSLayer({
+          new TileWMTSLayer({
             source
           })
         ]
