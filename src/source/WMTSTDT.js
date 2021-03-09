@@ -40,7 +40,7 @@ const default3857TileGrid = function() {
   return tileGird;
 };
 
-export default class TDT extends WMTSSource {
+export default class WMTSTDT extends WMTSSource {
   constructor(options) {
     const matrixSet = options.matrixSet || 'c';
     const layer = options.layer || 'vec';
