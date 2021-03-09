@@ -45,6 +45,7 @@ export default class WMTS extends TileLayer {
           }
         }
         const options = optionsFromCapabilities(result, { layer, matrixSet, style, urls });
+        console.log(options);
         this.setSource(new WMTSSource(options));
       });
   }
