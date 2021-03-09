@@ -1,11 +1,11 @@
 import VectorTileArcGISRest from './VectorTileArcGISRest';
 import VectorTileSuperMapRest from './VectorTileSuperMapRest';
-import TDT from './TDT';
+import WMTSTDT from './WMTSTDT';
 import XYZArcGISRest from './XYZArcGISRest';
 
 export default {
   VectorTileArcGISRest,
   VectorTileSuperMapRest,
-  TDT,
+  WMTSTDT,
   XYZArcGISRest
 };
