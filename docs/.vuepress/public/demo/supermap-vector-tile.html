@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css">
+  <title>加载SuperMap矢量切片</title>
+  <style>
+    html,body {
+      height: 100%;
+      margin: 0;
+    }
+    #map {
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/build/ol.js"></script>
+  <script src="./lib/oles.js"></script>
+  <script>
+    const url = 'http://support.supermap.com:8090/iserver/services/map-china400/restjsr/v1/vectortile/maps/ChinaDark';
+    const source = new oles.source.VectorTileSuperMapRest({
+      format: new ol.format.MVT(),
+      url
+    });
+    const map = new ol.Map({
+      target: 'map',
+      view: new ol.View({
+        center: [0, 0],
+        zoom: 2,
+        projection: 'EPSG:3857'
+      }),
+      layers: [
+        new oles.layer.VectorTileSuperMapRest({
+          source
+        })
+      ]
+    });
+  </script>
+</body>
+</html>

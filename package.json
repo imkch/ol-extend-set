@@ -4,8 +4,8 @@
   "description": "OpenLayer扩展工具",
   "main": "lib/oles.js",
   "scripts": {
-    "dev": "watch 'node rollup-build' src",
-    "build": "NODE_ENV=production node rollup-build",
+    "dev": "watch 'node rollup.config.dev' src",
+    "build": "node rollup.config.build",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs"
   },

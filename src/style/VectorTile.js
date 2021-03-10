@@ -1,4 +1,4 @@
-import stylefunction from 'ol-mapbox-style/src/stylefunction';
+import stylefunction from 'ol-mapbox-style/dist/stylefunction';
 
 function loadStyle(styleJson, vectorTileLayer, spriteUrl) {
   const { source, visible, credentials, headers } = vectorTileLayer;

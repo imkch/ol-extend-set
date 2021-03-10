@@ -8,4 +8,4 @@ const registerProjection = (code, proj4Str, options = {}) => {
   const opt = Object.assign({ code }, options);
   return new Projection(opt);
 };
-export { registerProjection };
+export default { registerProjection };
