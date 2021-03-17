@@ -7,15 +7,20 @@ module.exports = {
   themeConfig: {
     nav: [
       { text: '首页', link: '/' },
-      { text: '指南', link: '/guide/' },
-      { text: 'API', link: '/api/' },
+      // { text: '指南', link: '/guide/' },
+      // { text: 'API', link: '/api/' },
       { text: '样例', link: '/examples/' },
       { text: 'GitHub', link: 'https://github.com', target:'_blank' },
     ],
     sidebar: {
       '/examples/': [
         {
-          title: '样例',
+          title: '样例'
+        }
+      ],
+      '/api/': [
+        {
+          title: 'API',
           collapsable: false,
           sidebarDepth: 3,
           children: [
@@ -38,6 +43,7 @@ module.exports = {
   },
   plugins: {
     'demo-container': {
+      component: 'CustomDemoBlock',
       'locales': [
         {
           "lang": "zh-CN",

@@ -36970,11 +36970,598 @@
 
     }
 
+    function meterUnitConvert(unit) {
+      let meterPerUnit = 1;
+
+      switch (unit.toUpperCase()) {
+        case 'DEGREES':
+          meterPerUnit = Math.PI * 2 * 6378137 / 360;
+          break;
+
+        case 'KILOMETER':
+          meterPerUnit = 1.0e-3;
+          break;
+
+        case 'INCH':
+          meterPerUnit = 1 / 2.5399999918e-2;
+          break;
+
+        case 'FOOT':
+          meterPerUnit = 0.3048;
+          break;
+      }
+
+      return meterPerUnit;
+    }
+
+    const resolutionToScale = (resolution, dpi, unit) => {
+      var inchPerMeter = 1 / 0.0254;
+      const meterPerUnit = meterUnitConvert(unit);
+      return 1 / (resolution * dpi * inchPerMeter * meterPerUnit);
+    };
+
+    function getKeyForParams(params) {
+      let i = 0;
+      const res = [];
+
+      for (const key in params) {
+        res[i++] = key + '-' + params[key];
+      }
+
+      return res.join('/');
+    }
+
+    function getRequestUrl(urls, tileCoord, tileSize, dpi, projection, params, tileGrid, format) {
+      if (!urls) {
+        return undefined;
+      }
+
+      const resolution = tileGrid.getResolution(tileCoord[0]);
+      const unit = projection.getUnits();
+      const scale = resolutionToScale(resolution, dpi, unit);
+      const origin = tileGrid.getOrigin(0);
+      params['x'] = tileCoord[1];
+      params['y'] = tileCoord[2];
+      params['width'] = tileSize[0];
+      params['height'] = tileSize[1];
+      params['scale'] = scale;
+      params['origin'] = JSON.stringify({
+        x: origin[0],
+        y: origin[1]
+      });
+      let url;
+
+      if (urls.length == 1) {
+        url = urls[0];
+      } else {
+        const index = modulo(hash(tileCoord), urls.length);
+        url = urls[index];
+      }
+
+      const modifiedUrl = url + '/tileImage.' + format;
+      return appendParams(modifiedUrl, params);
+    }
+
+    class TileSuperMapRest extends TileImage {
+      constructor(options) {
+        super(options);
+        this.hidpi_ = options.hidpi !== undefined ? options.hidpi : false;
+        this.format_ = options.format ? options.format : 'png';
+        this.params_ = options.params || {};
+        this.setKey(getKeyForParams(this.params_));
+      }
+
+      tileUrlFunction(tileCoord, pixelRatio, projection) {
+        let tileGrid = this.getTileGrid();
+
+        if (!tileGrid) {
+          tileGrid = this.getTileGridForProjection(projection);
+        }
+
+        if (tileGrid.getResolutions().length <= tileCoord[0]) {
+          return undefined;
+        }
+
+        pixelRatio = this.hidpi_ ? pixelRatio : 1;
+        let tileSize = toSize(tileGrid.getTileSize(tileCoord[0]), this.tmpSize);
+
+        if (pixelRatio != 1) {
+          tileSize = scale(tileSize, pixelRatio, this.tmpSize);
+        }
+
+        const dpi = Math.round((this.params_['dpi'] ? this.params_['dpi'] : 96) * pixelRatio);
+        const baseParams = {
+          'transparent': true,
+          'redirect': false,
+          'cacheEnabled': true,
+          'overlapDisplayed': false
+        };
+        Object.assign(baseParams, this.params_);
+        return getRequestUrl(this.urls, tileCoord, tileSize, dpi, projection, baseParams, tileGrid, this.format_);
+      }
+
+    }
+
+    var __extends$L = (undefined && undefined.__extends) || (function () {
+        var extendStatics = function (d, b) {
+            extendStatics = Object.setPrototypeOf ||
+                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+                function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+            return extendStatics(d, b);
+        };
+        return function (d, b) {
+            extendStatics(d, b);
+            function __() { this.constructor = d; }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    })();
+    /**
+     * @typedef {function(import("../extent.js").Extent, number, number) : import("../ImageBase.js").default} FunctionType
+     */
+    /**
+     * @classdesc
+     * Class encapsulating single reprojected image.
+     * See {@link module:ol/source/Image~ImageSource}.
+     */
+    var ReprojImage = /** @class */ (function (_super) {
+        __extends$L(ReprojImage, _super);
+        /**
+         * @param {import("../proj/Projection.js").default} sourceProj Source projection (of the data).
+         * @param {import("../proj/Projection.js").default} targetProj Target projection.
+         * @param {import("../extent.js").Extent} targetExtent Target extent.
+         * @param {number} targetResolution Target resolution.
+         * @param {number} pixelRatio Pixel ratio.
+         * @param {FunctionType} getImageFunction
+         *     Function returning source images (extent, resolution, pixelRatio).
+         * @param {object=} opt_contextOptions Properties to set on the canvas context.
+         */
+        function ReprojImage(sourceProj, targetProj, targetExtent, targetResolution, pixelRatio, getImageFunction, opt_contextOptions) {
+            var _this = this;
+            var maxSourceExtent = sourceProj.getExtent();
+            var maxTargetExtent = targetProj.getExtent();
+            var limitedTargetExtent = maxTargetExtent
+                ? getIntersection(targetExtent, maxTargetExtent)
+                : targetExtent;
+            var targetCenter = getCenter(limitedTargetExtent);
+            var sourceResolution = calculateSourceResolution(sourceProj, targetProj, targetCenter, targetResolution);
+            var errorThresholdInPixels = ERROR_THRESHOLD;
+            var triangulation = new Triangulation(sourceProj, targetProj, limitedTargetExtent, maxSourceExtent, sourceResolution * errorThresholdInPixels, targetResolution);
+            var sourceExtent = triangulation.calculateSourceExtent();
+            var sourceImage = getImageFunction(sourceExtent, sourceResolution, pixelRatio);
+            var state = sourceImage ? ImageState.IDLE : ImageState.EMPTY;
+            var sourcePixelRatio = sourceImage ? sourceImage.getPixelRatio() : 1;
+            _this = _super.call(this, targetExtent, targetResolution, sourcePixelRatio, state) || this;
+            /**
+             * @private
+             * @type {import("../proj/Projection.js").default}
+             */
+            _this.targetProj_ = targetProj;
+            /**
+             * @private
+             * @type {import("../extent.js").Extent}
+             */
+            _this.maxSourceExtent_ = maxSourceExtent;
+            /**
+             * @private
+             * @type {!import("./Triangulation.js").default}
+             */
+            _this.triangulation_ = triangulation;
+            /**
+             * @private
+             * @type {number}
+             */
+            _this.targetResolution_ = targetResolution;
+            /**
+             * @private
+             * @type {import("../extent.js").Extent}
+             */
+            _this.targetExtent_ = targetExtent;
+            /**
+             * @private
+             * @type {import("../ImageBase.js").default}
+             */
+            _this.sourceImage_ = sourceImage;
+            /**
+             * @private
+             * @type {number}
+             */
+            _this.sourcePixelRatio_ = sourcePixelRatio;
+            /**
+             * @private
+             * @type {object}
+             */
+            _this.contextOptions_ = opt_contextOptions;
+            /**
+             * @private
+             * @type {HTMLCanvasElement}
+             */
+            _this.canvas_ = null;
+            /**
+             * @private
+             * @type {?import("../events.js").EventsKey}
+             */
+            _this.sourceListenerKey_ = null;
+            return _this;
+        }
+        /**
+         * Clean up.
+         */
+        ReprojImage.prototype.disposeInternal = function () {
+            if (this.state == ImageState.LOADING) {
+                this.unlistenSource_();
+            }
+            _super.prototype.disposeInternal.call(this);
+        };
+        /**
+         * @return {HTMLCanvasElement} Image.
+         */
+        ReprojImage.prototype.getImage = function () {
+            return this.canvas_;
+        };
+        /**
+         * @return {import("../proj/Projection.js").default} Projection.
+         */
+        ReprojImage.prototype.getProjection = function () {
+            return this.targetProj_;
+        };
+        /**
+         * @private
+         */
+        ReprojImage.prototype.reproject_ = function () {
+            var sourceState = this.sourceImage_.getState();
+            if (sourceState == ImageState.LOADED) {
+                var width = getWidth(this.targetExtent_) / this.targetResolution_;
+                var height = getHeight(this.targetExtent_) / this.targetResolution_;
+                this.canvas_ = render(width, height, this.sourcePixelRatio_, this.sourceImage_.getResolution(), this.maxSourceExtent_, this.targetResolution_, this.targetExtent_, this.triangulation_, [
+                    {
+                        extent: this.sourceImage_.getExtent(),
+                        image: this.sourceImage_.getImage(),
+                    },
+                ], 0, undefined, this.contextOptions_);
+            }
+            this.state = sourceState;
+            this.changed();
+        };
+        /**
+         * Load not yet loaded URI.
+         */
+        ReprojImage.prototype.load = function () {
+            if (this.state == ImageState.IDLE) {
+                this.state = ImageState.LOADING;
+                this.changed();
+                var sourceState = this.sourceImage_.getState();
+                if (sourceState == ImageState.LOADED || sourceState == ImageState.ERROR) {
+                    this.reproject_();
+                }
+                else {
+                    this.sourceListenerKey_ = listen(this.sourceImage_, EventType.CHANGE, function (e) {
+                        var sourceState = this.sourceImage_.getState();
+                        if (sourceState == ImageState.LOADED ||
+                            sourceState == ImageState.ERROR) {
+                            this.unlistenSource_();
+                            this.reproject_();
+                        }
+                    }, this);
+                    this.sourceImage_.load();
+                }
+            }
+        };
+        /**
+         * @private
+         */
+        ReprojImage.prototype.unlistenSource_ = function () {
+            unlistenByKey(
+            /** @type {!import("../events.js").EventsKey} */ (this.sourceListenerKey_));
+            this.sourceListenerKey_ = null;
+        };
+        return ReprojImage;
+    }(ImageBase));
+
+    var __extends$M = (undefined && undefined.__extends) || (function () {
+        var extendStatics = function (d, b) {
+            extendStatics = Object.setPrototypeOf ||
+                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+                function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+            return extendStatics(d, b);
+        };
+        return function (d, b) {
+            extendStatics(d, b);
+            function __() { this.constructor = d; }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    })();
+    /**
+     * @enum {string}
+     */
+    var ImageSourceEventType = {
+        /**
+         * Triggered when an image starts loading.
+         * @event module:ol/source/Image.ImageSourceEvent#imageloadstart
+         * @api
+         */
+        IMAGELOADSTART: 'imageloadstart',
+        /**
+         * Triggered when an image finishes loading.
+         * @event module:ol/source/Image.ImageSourceEvent#imageloadend
+         * @api
+         */
+        IMAGELOADEND: 'imageloadend',
+        /**
+         * Triggered if image loading results in an error.
+         * @event module:ol/source/Image.ImageSourceEvent#imageloaderror
+         * @api
+         */
+        IMAGELOADERROR: 'imageloaderror',
+    };
+    /**
+     * @classdesc
+     * Events emitted by {@link module:ol/source/Image~ImageSource} instances are instances of this
+     * type.
+     */
+    var ImageSourceEvent = /** @class */ (function (_super) {
+        __extends$M(ImageSourceEvent, _super);
+        /**
+         * @param {string} type Type.
+         * @param {import("../Image.js").default} image The image.
+         */
+        function ImageSourceEvent(type, image) {
+            var _this = _super.call(this, type) || this;
+            /**
+             * The image related to the event.
+             * @type {import("../Image.js").default}
+             * @api
+             */
+            _this.image = image;
+            return _this;
+        }
+        return ImageSourceEvent;
+    }(BaseEvent));
+    /**
+     * @typedef {Object} Options
+     * @property {import("./Source.js").AttributionLike} [attributions]
+     * @property {boolean} [imageSmoothing=true] Enable image smoothing.
+     * @property {import("../proj.js").ProjectionLike} [projection]
+     * @property {Array<number>} [resolutions]
+     * @property {import("./State.js").default} [state]
+     */
+    /**
+     * @classdesc
+     * Abstract base class; normally only used for creating subclasses and not
+     * instantiated in apps.
+     * Base class for sources providing a single image.
+     * @abstract
+     * @fires module:ol/source/Image.ImageSourceEvent
+     * @api
+     */
+    var ImageSource = /** @class */ (function (_super) {
+        __extends$M(ImageSource, _super);
+        /**
+         * @param {Options} options Single image source options.
+         */
+        function ImageSource(options) {
+            var _this = _super.call(this, {
+                attributions: options.attributions,
+                projection: options.projection,
+                state: options.state,
+            }) || this;
+            /**
+             * @private
+             * @type {Array<number>}
+             */
+            _this.resolutions_ =
+                options.resolutions !== undefined ? options.resolutions : null;
+            /**
+             * @private
+             * @type {import("../reproj/Image.js").default}
+             */
+            _this.reprojectedImage_ = null;
+            /**
+             * @private
+             * @type {number}
+             */
+            _this.reprojectedRevision_ = 0;
+            /**
+             * @private
+             * @type {object|undefined}
+             */
+            _this.contextOptions_ =
+                options.imageSmoothing === false ? IMAGE_SMOOTHING_DISABLED : undefined;
+            return _this;
+        }
+        /**
+         * @return {Array<number>} Resolutions.
+         */
+        ImageSource.prototype.getResolutions = function () {
+            return this.resolutions_;
+        };
+        /**
+         * @return {Object|undefined} Context options.
+         */
+        ImageSource.prototype.getContextOptions = function () {
+            return this.contextOptions_;
+        };
+        /**
+         * @protected
+         * @param {number} resolution Resolution.
+         * @return {number} Resolution.
+         */
+        ImageSource.prototype.findNearestResolution = function (resolution) {
+            if (this.resolutions_) {
+                var idx = linearFindNearest(this.resolutions_, resolution, 0);
+                resolution = this.resolutions_[idx];
+            }
+            return resolution;
+        };
+        /**
+         * @param {import("../extent.js").Extent} extent Extent.
+         * @param {number} resolution Resolution.
+         * @param {number} pixelRatio Pixel ratio.
+         * @param {import("../proj/Projection.js").default} projection Projection.
+         * @return {import("../ImageBase.js").default} Single image.
+         */
+        ImageSource.prototype.getImage = function (extent, resolution, pixelRatio, projection) {
+            var sourceProjection = this.getProjection();
+            if (
+                !sourceProjection ||
+                !projection ||
+                equivalent(sourceProjection, projection)) {
+                if (sourceProjection) {
+                    projection = sourceProjection;
+                }
+                return this.getImageInternal(extent, resolution, pixelRatio, projection);
+            }
+            else {
+                if (this.reprojectedImage_) {
+                    if (this.reprojectedRevision_ == this.getRevision() &&
+                        equivalent(this.reprojectedImage_.getProjection(), projection) &&
+                        this.reprojectedImage_.getResolution() == resolution &&
+                        equals$1(this.reprojectedImage_.getExtent(), extent)) {
+                        return this.reprojectedImage_;
+                    }
+                    this.reprojectedImage_.dispose();
+                    this.reprojectedImage_ = null;
+                }
+                this.reprojectedImage_ = new ReprojImage(sourceProjection, projection, extent, resolution, pixelRatio, function (extent, resolution, pixelRatio) {
+                    return this.getImageInternal(extent, resolution, pixelRatio, sourceProjection);
+                }.bind(this), this.contextOptions_);
+                this.reprojectedRevision_ = this.getRevision();
+                return this.reprojectedImage_;
+            }
+        };
+        /**
+         * @abstract
+         * @param {import("../extent.js").Extent} extent Extent.
+         * @param {number} resolution Resolution.
+         * @param {number} pixelRatio Pixel ratio.
+         * @param {import("../proj/Projection.js").default} projection Projection.
+         * @return {import("../ImageBase.js").default} Single image.
+         * @protected
+         */
+        ImageSource.prototype.getImageInternal = function (extent, resolution, pixelRatio, projection) {
+            return abstract();
+        };
+        /**
+         * Handle image change events.
+         * @param {import("../events/Event.js").default} event Event.
+         * @protected
+         */
+        ImageSource.prototype.handleImageChange = function (event) {
+            var image = /** @type {import("../Image.js").default} */ (event.target);
+            switch (image.getState()) {
+                case ImageState.LOADING:
+                    this.loading = true;
+                    this.dispatchEvent(new ImageSourceEvent(ImageSourceEventType.IMAGELOADSTART, image));
+                    break;
+                case ImageState.LOADED:
+                    this.loading = false;
+                    this.dispatchEvent(new ImageSourceEvent(ImageSourceEventType.IMAGELOADEND, image));
+                    break;
+                case ImageState.ERROR:
+                    this.loading = false;
+                    this.dispatchEvent(new ImageSourceEvent(ImageSourceEventType.IMAGELOADERROR, image));
+                    break;
+                // pass
+            }
+        };
+        return ImageSource;
+    }(Source));
+    /**
+     * Default image load function for image sources that use import("../Image.js").Image image
+     * instances.
+     * @param {import("../Image.js").default} image Image.
+     * @param {string} src Source.
+     */
+    function defaultImageLoadFunction(image, src) {
+        /** @type {HTMLImageElement|HTMLVideoElement} */ (image.getImage()).src = src;
+    }
+
+    function getRequestUrl$1(url, viewExtent, imageSize, params, format) {
+      const viewBounds = {
+        leftBottom: {
+          x: viewExtent[0],
+          y: viewExtent[1]
+        },
+        rightTop: {
+          x: viewExtent[2],
+          y: viewExtent[3]
+        }
+      };
+      params['width'] = imageSize[0];
+      params['height'] = imageSize[1];
+      params['viewBounds'] = JSON.stringify(viewBounds);
+      const modifiedUrl = url + '/image.' + format;
+      return appendParams(modifiedUrl, params);
+    }
+
+    class ImageSuperMapRest extends ImageSource {
+      constructor(options) {
+        super(options);
+        this.url_ = options.url;
+        this.hidpi_ = options.hidpi !== undefined ? options.hidpi : false;
+        this.format_ = options.format ? options.format : 'png';
+        this.params_ = options.params || {};
+        this.ratio_ = options.ratio !== undefined ? options.ratio : 1.5;
+        this.crossOrigin_ = options.crossOrigin !== undefined ? options.crossOrigin : null;
+        this.imageLoadFunction_ = options.imageLoadFunction !== undefined ? options.imageLoadFunction : defaultImageLoadFunction;
+      }
+
+      getImageInternal(extent, resolution, pixelRatio) {
+        if (this.url_ === undefined) {
+          return null;
+        }
+
+        resolution = this.findNearestResolution(resolution);
+        pixelRatio = this.hidpi_ ? pixelRatio : 1;
+        const image = this.image_;
+
+        if (image && this.renderedRevision_ == this.getRevision() && image.getResolution() == resolution && image.getPixelRatio() == pixelRatio && containsExtent(image.getExtent(), extent)) {
+          return image;
+        }
+
+        const baseParams = {
+          'transparent': true,
+          'redirect': false,
+          'cacheEnabled': true,
+          'overlapDisplayed': false
+        };
+        Object.assign(baseParams, this.params_);
+        extent = extent.slice();
+        const centerX = (extent[0] + extent[2]) / 2;
+        const centerY = (extent[1] + extent[3]) / 2;
+
+        if (this.ratio_ != 1) {
+          const halfWidth = this.ratio_ * getWidth(extent) / 2;
+          const halfHeight = this.ratio_ * getHeight(extent) / 2;
+          extent[0] = centerX - halfWidth;
+          extent[1] = centerY - halfHeight;
+          extent[2] = centerX + halfWidth;
+          extent[3] = centerY + halfHeight;
+        }
+
+        const imageResolution = resolution / pixelRatio;
+        const width = Math.ceil(getWidth(extent) / imageResolution);
+        const height = Math.ceil(getHeight(extent) / imageResolution);
+        extent[0] = centerX - imageResolution * width / 2;
+        extent[2] = centerX + imageResolution * width / 2;
+        extent[1] = centerY - imageResolution * height / 2;
+        extent[3] = centerY + imageResolution * height / 2;
+        const imageSize = [width, height];
+        const url = getRequestUrl$1(this.url_, extent, imageSize, baseParams, this.format_);
+        this.image_ = new ImageWrapper(extent, resolution, pixelRatio, url, this.crossOrigin_, this.imageLoadFunction_);
+        this.renderedRevision_ = this.getRevision();
+        this.image_.addEventListener('change', this.handleImageChange.bind(this));
+        return this.image_;
+      }
+
+    }
+
     var source$1 = {
       VectorTileArcGISRest: VectorTileArcGISRest$2,
       VectorTileSuperMapRest: VectorTileArcGISRest$3,
       WMTSTDT,
-      XYZArcGISRest
+      XYZArcGISRest,
+      TileSuperMapRest,
+      ImageSuperMapRest
     };
 
     /**

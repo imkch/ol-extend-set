@@ -12,4 +12,5 @@ Object.assign(config.output, {
 rollup.rollup(config)
   .then(bundle => {
     bundle.write(config.output);
+    console.log('build end');
   });
