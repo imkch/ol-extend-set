@@ -7,9 +7,11 @@ export default class TileWMTS extends Tile {
     const source = options.source;
     source && delete options.source
     super(options);
-    source && this.setSourceFunction(source);
+    this.credentials_ = options.withCredentials ? 'include' : 'omit';
+    this.headers_ = options.headers || {};
+    source && this.setSource_(source);
   }
-  setSourceFunction(source) {
+  setSource_(source) {
     const urls = source.getUrls();
     if (!urls || urls.length < 1) {
       console.error("url is required");
@@ -19,7 +21,7 @@ export default class TileWMTS extends Tile {
     let matrixSet = source.getMatrixSet();
     let style = source.getStyle();
     const url = `${urls[0]}${urls[0].indexOf('?') > -1 ? '&' : '?'}request=GetCapabilities&service=wmts`;
-    fetch(url)
+    fetch(url, { headers: this.headers_, credentials: this.credentials_ })
       .then(response => response.text())
       .then(text => {
         const parser = new WMTSCapabilities();

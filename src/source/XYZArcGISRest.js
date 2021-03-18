@@ -6,11 +6,14 @@ export default class XYZArcGISRest extends XYZ {
     const baseUrl = options.url;
     options.url = `${baseUrl}/tile/{z}/{y}/{x}`;
     super(options);
-    this.setTileGridFunction(baseUrl);
+    this.baseUrl_ = baseUrl;
+    this.credentials_ = options.withCredentials ? 'include' : 'omit';
+    this.headers_ = options.headers || {};
+    this.setTileGrid_();
   }
-  setTileGridFunction(baseUrl) {
-    const url = `${baseUrl}?f=pjson`;
-    fetch(url)
+  setTileGrid_() {
+    const url = `${this.baseUrl}?f=pjson`;
+    fetch(url, { headers: this.headers_, credentials: this.credentials_ })
       .then(response => response.json())
       .then(data => {
         const { tileInfo, fullExtent } = data;

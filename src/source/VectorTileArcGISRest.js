@@ -8,6 +8,9 @@ export default class VectorTileArcGISRest extends VectorTile {
     const baseUrl = options.url;
     options.url = baseUrl + '/tile/{z}/{y}/{x}.pbf';
     super(options);
-    this.baseUrl = baseUrl;
+    this.baseUrl_ = baseUrl;
+  }
+  getBaseUrl() {
+    return this.baseUrl_;
   }
 }

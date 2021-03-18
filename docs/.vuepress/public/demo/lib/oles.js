@@ -30256,7 +30256,7 @@
       };
     }
 
-    const loadVectorTileStyle = (vectorTileLayer, styleUrl, spriteUrl, credentials, headers, visible) => {
+    const loadVectorTileStyle = (vectorTileLayer, styleUrl, spriteUrl, credentials = 'omit', headers = {}, visible = false) => {
       fetch(styleUrl, {
         headers,
         credentials
@@ -30272,16 +30272,17 @@
         const visible = typeof options.visible === 'undefined' ? true : options.visible;
         options.visible = false;
         super(options);
-        const credentials = options.withCredentials ? 'include' : 'omit';
-        const headers = options.headers || {};
-        this.styleLoadFunction(credentials, headers, visible);
+        this.defaultVisible_ = visible;
+        this.credentials_ = options.withCredentials ? 'include' : 'omit';
+        this.headers_ = options.headers || {};
+        this.loadStyle_();
       }
 
-      styleLoadFunction(credentials, headers, visible) {
+      loadStyle_() {
         const source = this.getSource();
-        const styleUrl = source.baseUrl + '/resources/styles';
-        const spriteUrl = source.baseUrl + '/resources/sprites/sprite';
-        loadVectorTileStyle(this, styleUrl, spriteUrl, credentials, headers, visible);
+        const styleUrl = source.getBaseUrl() + '/resources/styles';
+        const spriteUrl = source.getBaseUrl() + '/resources/sprites/sprite';
+        loadVectorTileStyle(this, styleUrl, spriteUrl, this.credentials_, this.headers_, this.defaultVisible_);
       }
 
     }
@@ -30291,16 +30292,17 @@
         const visible = typeof options.visible === 'undefined' ? true : options.visible;
         options.visible = false;
         super(options);
-        const credentials = options.withCredentials ? 'include' : 'omit';
-        const headers = options.headers || {};
-        this.styleLoadFunction(credentials, headers, visible);
+        this.defaultVisible_ = visible;
+        this.credentials_ = options.withCredentials ? 'include' : 'omit';
+        this.headers_ = options.headers || {};
+        this.loadStyle_();
       }
 
-      styleLoadFunction(credentials, headers, visible) {
+      loadStyle_() {
         const source = this.getSource();
-        const styleUrl = source.baseUrl + '/style.json';
-        const spriteUrl = source.baseUrl + '/sprites/sprite';
-        loadVectorTileStyle(this, styleUrl, spriteUrl, credentials, headers, visible);
+        const styleUrl = source.getBaseUrl() + '/style.json';
+        const spriteUrl = source.getBaseUrl() + '/sprites/sprite';
+        loadVectorTileStyle(this, styleUrl, spriteUrl, this.credentials_, this.headers_, this.defaultVisible_);
       }
 
     }
@@ -35788,10 +35790,12 @@
         const source = options.source;
         source && delete options.source;
         super(options);
-        source && this.setSourceFunction(source);
+        this.credentials_ = options.withCredentials ? 'include' : 'omit';
+        this.headers_ = options.headers || {};
+        source && this.setSource_(source);
       }
 
-      setSourceFunction(source) {
+      setSource_(source) {
         const urls = source.getUrls();
 
         if (!urls || urls.length < 1) {
@@ -35803,7 +35807,10 @@
         let matrixSet = source.getMatrixSet();
         let style = source.getStyle();
         const url = `${urls[0]}${urls[0].indexOf('?') > -1 ? '&' : '?'}request=GetCapabilities&service=wmts`;
-        fetch(url).then(response => response.text()).then(text => {
+        fetch(url, {
+          headers: this.headers_,
+          credentials: this.credentials_
+        }).then(response => response.text()).then(text => {
           const parser = new WMTSCapabilities();
           const result = parser.read(text);
           const layers = result.Contents.Layer;
@@ -36734,7 +36741,11 @@
         const baseUrl = options.url;
         options.url = baseUrl + '/tile/{z}/{y}/{x}.pbf';
         super(options);
-        this.baseUrl = baseUrl;
+        this.baseUrl_ = baseUrl;
+      }
+
+      getBaseUrl() {
+        return this.baseUrl_;
       }
 
     }
@@ -36748,7 +36759,11 @@
         const baseUrl = options.url;
         options.url = baseUrl + '/tiles/{z}/{x}/{y}.mvt';
         super(options);
-        this.baseUrl = baseUrl;
+        this.baseUrl_ = baseUrl;
+      }
+
+      getBaseUrl() {
+        return this.baseUrl_;
       }
 
     }
@@ -36932,12 +36947,18 @@
         const baseUrl = options.url;
         options.url = `${baseUrl}/tile/{z}/{y}/{x}`;
         super(options);
-        this.setTileGridFunction(baseUrl);
+        this.baseUrl_ = baseUrl;
+        this.credentials_ = options.withCredentials ? 'include' : 'omit';
+        this.headers_ = options.headers || {};
+        this.setTileGrid_();
       }
 
-      setTileGridFunction(baseUrl) {
-        const url = `${baseUrl}?f=pjson`;
-        fetch(url).then(response => response.json()).then(data => {
+      setTileGrid_() {
+        const url = `${this.baseUrl}?f=pjson`;
+        fetch(url, {
+          headers: this.headers_,
+          credentials: this.credentials_
+        }).then(response => response.json()).then(data => {
           const {
             tileInfo,
             fullExtent

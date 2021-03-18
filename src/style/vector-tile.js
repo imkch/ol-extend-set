@@ -38,7 +38,7 @@ function getStyle(vectorTileLayer, styleJson, sourceName, resolutions, sprite, s
   };
 }
 
-const loadVectorTileStyle = (vectorTileLayer, styleUrl, spriteUrl, credentials, headers, visible) => {
+const loadVectorTileStyle = (vectorTileLayer, styleUrl, spriteUrl, credentials = 'omit', headers = {}, visible = false) => {
   fetch(styleUrl, { headers, credentials })
     .then(response => response.json())
     .then(data => {
