@@ -30226,13 +30226,8 @@
         return styleFunction;
     }
 
-    function loadStyle(styleJson, vectorTileLayer, spriteUrl) {
-      const {
-        source,
-        visible,
-        credentials,
-        headers
-      } = vectorTileLayer;
+    function loadStyle(styleJson, vectorTileLayer, spriteUrl, credentials, headers, visible) {
+      const source = vectorTileLayer.getSource();
       const spriteScale = window.devicePixelRatio >= 1.5 ? 0.5 : 1;
       const sizeFactor = spriteScale === 0.5 ? '@2x' : '';
       const sourceName = Object.keys(styleJson.sources)[0];
@@ -30261,16 +30256,12 @@
       };
     }
 
-    const loadVectorTileStyle = (vectorTileLayer, styleUrl, spriteUrl) => {
-      const {
-        credentials,
-        headers
-      } = vectorTileLayer;
+    const loadVectorTileStyle = (vectorTileLayer, styleUrl, spriteUrl, credentials, headers, visible) => {
       fetch(styleUrl, {
         headers,
         credentials
       }).then(response => response.json()).then(data => {
-        loadStyle(data, vectorTileLayer, spriteUrl);
+        loadStyle(data, vectorTileLayer, spriteUrl, credentials, headers, visible);
       }).catch(e => {
         console.error('load style error', e);
       });
@@ -30281,17 +30272,16 @@
         const visible = typeof options.visible === 'undefined' ? true : options.visible;
         options.visible = false;
         super(options);
-        this.visible = visible;
-        this.source = options.source;
-        this.credentials = options.withCredentials ? 'include' : 'omit';
-        this.headers = options.headers || {};
-        this.styleLoadFunction();
+        const credentials = options.withCredentials ? 'include' : 'omit';
+        const headers = options.headers || {};
+        this.styleLoadFunction(credentials, headers, visible);
       }
 
-      styleLoadFunction() {
-        const styleUrl = this.source.baseUrl + '/resources/styles';
-        const spriteUrl = this.source.baseUrl + '/resources/sprites/sprite';
-        loadVectorTileStyle(this, styleUrl, spriteUrl);
+      styleLoadFunction(credentials, headers, visible) {
+        const source = this.getSource();
+        const styleUrl = source.baseUrl + '/resources/styles';
+        const spriteUrl = source.baseUrl + '/resources/sprites/sprite';
+        loadVectorTileStyle(this, styleUrl, spriteUrl, credentials, headers, visible);
       }
 
     }
@@ -30301,17 +30291,16 @@
         const visible = typeof options.visible === 'undefined' ? true : options.visible;
         options.visible = false;
         super(options);
-        this.visible = visible;
-        this.source = options.source;
-        this.credentials = options.withCredentials ? 'include' : 'omit';
-        this.headers = options.headers || {};
-        this.styleLoadFunction();
+        const credentials = options.withCredentials ? 'include' : 'omit';
+        const headers = options.headers || {};
+        this.styleLoadFunction(credentials, headers, visible);
       }
 
-      styleLoadFunction() {
-        const styleUrl = this.source.baseUrl + '/style.json';
-        const spriteUrl = this.source.baseUrl + '/sprites/sprite';
-        loadVectorTileStyle(this, styleUrl, spriteUrl);
+      styleLoadFunction(credentials, headers, visible) {
+        const source = this.getSource();
+        const styleUrl = source.baseUrl + '/style.json';
+        const spriteUrl = source.baseUrl + '/sprites/sprite';
+        loadVectorTileStyle(this, styleUrl, spriteUrl, credentials, headers, visible);
       }
 
     }

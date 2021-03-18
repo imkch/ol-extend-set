@@ -1,7 +1,7 @@
 import stylefunction from 'ol-mapbox-style/dist/stylefunction';
 
-function loadStyle(styleJson, vectorTileLayer, spriteUrl) {
-  const { source, visible, credentials, headers } = vectorTileLayer;
+function loadStyle(styleJson, vectorTileLayer, spriteUrl, credentials, headers, visible) {
+  const source = vectorTileLayer.getSource();
   const spriteScale = window.devicePixelRatio >= 1.5 ? 0.5 : 1;
   const sizeFactor = spriteScale === 0.5 ? '@2x' : '';
   const sourceName = Object.keys(styleJson.sources)[0];
@@ -38,12 +38,11 @@ function getStyle(vectorTileLayer, styleJson, sourceName, resolutions, sprite, s
   };
 }
 
-const loadVectorTileStyle = (vectorTileLayer, styleUrl, spriteUrl) => {
-  const { credentials, headers } = vectorTileLayer;
+const loadVectorTileStyle = (vectorTileLayer, styleUrl, spriteUrl, credentials, headers, visible) => {
   fetch(styleUrl, { headers, credentials })
     .then(response => response.json())
     .then(data => {
-      loadStyle(data, vectorTileLayer, spriteUrl);
+      loadStyle(data, vectorTileLayer, spriteUrl, credentials, headers, visible);
     })
     .catch(e => {
       console.error('load style error', e);
