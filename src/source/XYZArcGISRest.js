@@ -1,7 +1,7 @@
-import XYZSource from 'ol/source/XYZ';
+import XYZ from 'ol/source/XYZ';
 import TileGrid from 'ol/tilegrid/TileGrid';
 
-export default class XYZArcGISRest extends XYZSource {
+export default class XYZArcGISRest extends XYZ {
   constructor(options) {
     const baseUrl = options.url;
     options.url = `${baseUrl}/tile/{z}/{y}/{x}`;

@@ -1,5 +1,5 @@
 import VectorTile from 'ol/layer/VectorTile';
-import { loadVectorTileStyle } from '../style/VectorTile';
+import { loadVectorTileStyle } from '../style/vector-tile';
 
 export default class VectorTileArcGISRest extends VectorTile {
   constructor(options) {

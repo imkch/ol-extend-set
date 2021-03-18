@@ -1,7 +1,7 @@
-import VectorTile from 'ol/layer/VectorTile';
-import { loadVectorTileStyle } from '../style/VectorTile';
+import VectorTileLayer from 'ol/layer/VectorTile';
+import { loadVectorTileStyle } from '../style/vector-tile';
 
-export default class VectorTileArcGISRest extends VectorTile {
+export default class VectorTileArcGISRest extends VectorTileLayer {
   constructor(options) {
     const visible = typeof(options.visible) === 'undefined' ? true : options.visible;
     options.visible = false;

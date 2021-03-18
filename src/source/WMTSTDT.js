@@ -1,4 +1,4 @@
-import WMTSSource from 'ol/source/WMTS';
+import WMTS from 'ol/source/WMTS';
 import WMTSTileGrid from 'ol/tilegrid/WMTS';
 
 const default4326TileGrid = function() {
@@ -40,7 +40,7 @@ const default3857TileGrid = function() {
   return tileGird;
 };
 
-export default class WMTSTDT extends WMTSSource {
+export default class WMTSTDT extends WMTS {
   constructor(options) {
     const matrixSet = options.matrixSet || 'c';
     const layer = options.layer || 'vec';
