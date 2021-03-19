@@ -22,17 +22,18 @@
   <script src="https://cdn.jsdelivr.net/npm/proj4/dist/proj4.js"></script>
   <script src="./lib/oles.js"></script>
   <script>
-    const projection = oles.proj.registerProjection('EPSG:4490', '+proj=longlat+ellps=GRS80+no_defs', { units: 'degrees', G: () =>{} });
+    const projection = oles.proj.registerProjection('EPSG:4490', '+proj=longlat+ellps=GRS80+no_defs', { units: 'degrees'});
     const source = new oles.source.WMTSTDT({
       tk: '5d4236a2a06043cd0b0880bbf270c958',
-      layer: 'img'
+      layer: 'img',
+      matrixSet: 'w'
     });
     const map = new ol.Map({
       target: 'map',
       view: new ol.View({
         center: [0, 0],
-        zoom: 6,
-        projection
+        zoom: 0,
+        // projection
       }),
       layers: [
         new ol.layer.Tile({

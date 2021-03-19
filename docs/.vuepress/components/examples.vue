@@ -31,34 +31,44 @@ export default {
               url: '../demo/wmts.html'
             },
             {
-              cover: '../img/wmts.png',
+              cover: '../img/tdt-wmts.png',
               name: '加载天地图',
               url: '../demo/tdt-wmts.html'
             },
             {
-              cover: '../img/wmts.png',
+              cover: '../img/arcgis-xyz.png',
               name: '使用XYZ方式加载ArcGIS切片',
               url: '../demo/arcgis-xyz.html'
             },
             {
-              cover: '../img/wmts.png',
-              name: '加载ArcGIS矢量切片',
-              url: '../demo/arcgis-vector-tile.html'
-            },
-            {
-              cover: '../img/wmts.png',
-              name: '加载SuperMap矢量切片',
-              url: '../demo/supermap-vector-tile.html'
-            },
-            {
-              cover: '../img/wmts.png',
+              cover: '../img/supermap-rest-tile.png',
               name: '切片加载SuperMap Rest服务',
               url: '../demo/supermap-rest-tile.html'
             },
             {
-              cover: '../img/wmts.png',
+              cover: '../img/supermap-rest-image.png',
               name: '全图加载SuperMap Rest服务',
               url: '../demo/supermap-rest-image.html'
+            },
+            {
+              cover: '../img/arcgis-vector-tile.png',
+              name: '加载ArcGIS矢量切片',
+              url: '../demo/arcgis-vector-tile.html'
+            },
+            {
+              cover: '../img/supermap-vector-tile.png',
+              name: '加载SuperMap矢量切片',
+              url: '../demo/supermap-vector-tile.html'
+            }
+          ]
+        },
+        {
+          name: '坐标系',
+          demoList: [
+            {
+              cover: '../img/custom-coordinate-system.png',
+              name: '自定义坐标系：用4490坐标系加载天地图',
+              url: '../demo/custom-coordinate-system.html'
             }
           ]
         }
@@ -103,7 +113,7 @@ export default {
 }
 .card h3 {
   margin: 16px;
-  font-size: 18px;
+  font-size: 16px;
   color: rgba(0, 0, 0, .6);
 }
 .card-none {
