@@ -71,6 +71,16 @@ export default {
               url: '../demo/custom-coordinate-system.html'
             }
           ]
+        },
+        {
+          name: '地图工具',
+          demoList: [
+            {
+              cover: '../img/snapshot.png',
+              name: '地图快照',
+              url: '../demo/snapshot.html'
+            }
+          ]
         }
       ]
     };

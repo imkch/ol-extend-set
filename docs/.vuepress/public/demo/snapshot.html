@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css">
+  <title>地图快照</title>
+  <style>
+    html,body {
+      height: 100%;
+      margin: 0;
+    }
+    #map {
+      height: 100%;
+    }
+    .ol-snapshot {
+      top: .5em;
+      right: .5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/build/ol.js"></script>
+  <script src="./lib/oles.js"></script>
+  <script>
+    const source = new oles.source.WMTSTDT({
+      tk: '5d4236a2a06043cd0b0880bbf270c958',
+      layer: 'vec',
+      matrixSet: 'w',
+      crossOrigin: 'anonymous'
+    });
+    const map = new ol.Map({
+      target: 'map',
+      view: new ol.View({
+        center: [0, 0],
+        zoom: 0
+      }),
+      layers: [
+        new ol.layer.Tile({
+          source
+        })
+      ]
+    });
+    const snapshot = new oles.control.Snapshot();
+    map.addControl(snapshot);
+  </script>
+</body>
+</html>
