@@ -1,0 +1,37 @@
+.ol-tooltip {
+  position: relative;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 4px 8px;
+  opacity: 0.7;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.ol-tooltip-measure {
+  opacity: 1;
+}
+.ol-tooltip-static {
+  opacity: 1;
+  background-color: white;
+  color: #666666;
+  border: 1px solid red;
+}
+
+.ol-tooltip-value {
+  color: red;
+  font-weight: bolder;
+}
+.ol-tooltip-close {
+  top: -10px;
+  left: -20px;
+  position: absolute;
+  background: white;
+  border: 1px solid red;
+  height: 16px;
+  width: 16px;
+  line-height: 16px;
+  font-weight: bolder;
+  color: red;
+  text-align: center;
+  cursor: pointer;
+}
