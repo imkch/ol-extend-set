@@ -37,14 +37,12 @@ export default class Measure extends Interaction {
     this.createHelpTooltip_();
     this.drawInteraction_ = this.createDraw_(geometryType);
     this.map_.addInteraction(this.drawInteraction_);
-    this.map_.on('pointermove', this.handlePointerMove_.bind(this));
-    this.map_.getViewport().addEventListener('mouseout', this.handleMouseOut_.bind(this));
+    this.mapMoveListener_ = this.map_.on('pointermove', this.handlePointerMove_.bind(this));
   }
   stop() {
     this.map_.removeOverlay(this.helpTooltip_);
-    this.map_.un('pointermove', this.handlePointerMove_);
-    this.map_.getViewport().removeEventListener('mouseout', this.handleMouseOut_);
     this.map_.removeInteraction(this.drawInteraction_);
+    unByKey(this.mapMoveListener_);
   }
   createDraw_(type) {
     const draw = new Draw({type, style: this.style_, source: this.source_, freehand: false});
@@ -177,9 +175,6 @@ export default class Measure extends Interaction {
     this.helpTooltip_.setPosition(evt.coordinate);
   
     this.helpTooltipElement_.classList.remove('hidden');
-  }
-  handleMouseOut_() {
-    this.helpTooltipElement_.classList.add('hidden');
   }
   calculateArea_(polygon) {
     const area = getArea(polygon, {
