@@ -46600,12 +46600,12 @@
     class FullScreen extends Interaction {
       constructor(options = {}) {
         super(options);
-        this.targetElem_ = typeof options.target === 'string' ? document.getElementById(options.target) : options.target;
+        this.targetElement_ = typeof options.target === 'string' ? document.getElementById(options.target) : options.target;
       }
 
       entry() {
         if (!this.isSupported_() || this.isFullScreen_()) return;
-        const elem = this.targetElem_ || this.getMap().getTargetElement() || document;
+        const elem = this.targetElement_ || this.getMap().getTargetElement() || document;
 
         if (elem.webkitRequestFullScreen) {
           elem.webkitRequestFullScreen();
