@@ -7,13 +7,13 @@ import FillStyle from 'ol/style/Fill';
 import StrokeStyle from 'ol/style/Stroke';
 import { unByKey } from 'ol/Observable';
 import { getArea, getLength } from 'ol/sphere';
-import { LineString, Polygon } from "ol/geom";
+import { LineString, Polygon } from 'ol/geom';
 
 import './measure.css';
 
 const measureLayerId = 'measureLayer';
-const continuePolygonMsg = "单击确定地点，双击结束";
-const continueLineMsg = "单击确定地点，双击结束";
+const continuePolygonMsg = '单击确定地点，双击结束';
+const continueLineMsg = '单击确定地点，双击结束';
 
 export default class Measure extends Interaction {
   constructor(options = {}) {
@@ -43,7 +43,7 @@ export default class Measure extends Interaction {
   stop() {
     this.map_.removeOverlay(this.helpTooltip_);
     this.map_.un('pointermove', this.handlePointerMove_);
-    this.map_.getViewport().removeEventListener("mouseout", this.handleMouseOut_);
+    this.map_.getViewport().removeEventListener('mouseout', this.handleMouseOut_);
     this.map_.removeInteraction(this.drawInteraction_);
   }
   createDraw_(type) {
@@ -80,7 +80,7 @@ export default class Measure extends Interaction {
     this.updateDblClickInteraction_(false);
     this.sketch_ = evt.feature;
     let tooltipCoord = evt.coordinate;
-    this.listener_ = this.sketch_.getGeometry().on("change", e => {
+    this.listener_ = this.sketch_.getGeometry().on('change', e => {
       const geom = e.target;
       let output;
       if (geom instanceof Polygon) {
@@ -98,17 +98,17 @@ export default class Measure extends Interaction {
     setTimeout(() => {
       this.updateDblClickInteraction_(true);
     }, 1000);
-    this.measureTooltipElement_.className = "ol-tooltip ol-tooltip-static";
-    const closeElement = document.createElement("span");
-    closeElement.className = "ol-tooltip-close";
-    closeElement.innerHTML = "X";
+    this.measureTooltipElement_.className = 'ol-tooltip ol-tooltip-static';
+    const closeElement = document.createElement('span');
+    closeElement.className = 'ol-tooltip-close';
+    closeElement.innerHTML = 'X';
     this.measureTooltipElement_.appendChild(closeElement);
     this.measureTooltip_.setOffset([0, -7]);
 
     closeElement.feature = this.sketch_;
     closeElement.overlay = this.measureTooltip_;
     closeElement.addEventListener(
-      "click",
+      'click',
       e => {
         const { feature, overlay } = e.target;
         const layer = this.getLayerById_(measureLayerId);
@@ -137,12 +137,12 @@ export default class Measure extends Interaction {
     if (this.helpTooltipElement_) {
       this.helpTooltipElement_.parentNode.removeChild(this.helpTooltipElement_);
     }
-    this.helpTooltipElement_ = document.createElement("div");
-    this.helpTooltipElement_.className = "ol-tooltip hidden";
+    this.helpTooltipElement_ = document.createElement('div');
+    this.helpTooltipElement_.className = 'ol-tooltip hidden';
     this.helpTooltip_ = new Overlay({
       element: this.helpTooltipElement_,
       offset: [15, 0],
-      positioning: "center-left"
+      positioning: 'center-left'
     });
     this.map_.addOverlay(this.helpTooltip_);
   }
@@ -150,8 +150,8 @@ export default class Measure extends Interaction {
     if (this.measureTooltipElement_) {
       this.measureTooltipElement_.parentNode.removeChild(this.measureTooltipElement_);
     }
-    this.measureTooltipElement_ = document.createElement("div");
-    this.measureTooltipElement_.className = "ol-tooltip ol-tooltip-measure";
+    this.measureTooltipElement_ = document.createElement('div');
+    this.measureTooltipElement_.className = 'ol-tooltip ol-tooltip-measure';
     this.measureTooltip_ = new Overlay({
       element: this.measureTooltipElement_,
       offset: [0, -15],
@@ -163,7 +163,7 @@ export default class Measure extends Interaction {
     if (evt.dragging) {
       return;
     }
-    let helpMsg = "单击开始绘制";
+    let helpMsg = '单击开始绘制';
     if (this.sketch_) {
       const geom = this.sketch_.getGeometry();
       if (geom instanceof Polygon) {
@@ -176,10 +176,10 @@ export default class Measure extends Interaction {
     this.helpTooltipElement_.innerHTML = helpMsg;
     this.helpTooltip_.setPosition(evt.coordinate);
   
-    this.helpTooltipElement_.classList.remove("hidden");
+    this.helpTooltipElement_.classList.remove('hidden');
   }
   handleMouseOut_() {
-    this.helpTooltipElement_.classList.add("hidden");
+    this.helpTooltipElement_.classList.add('hidden');
   }
   calculateArea_(polygon) {
     const area = getArea(polygon, {
@@ -187,11 +187,11 @@ export default class Measure extends Interaction {
     });
     let output;
     if (area > 10000) {
-      output = `<font class="ol-tooltip-value">${Math.round(
+      output = `<font class='ol-tooltip-value'>${Math.round(
         (area / 1000000) * 100
       ) / 100}</font> 平方千米`;
     } else {
-      output = `<font class="ol-tooltip-value">${Math.round(area * 100) /
+      output = `<font class='ol-tooltip-value'>${Math.round(area * 100) /
         100}</font> 平方米`;
     }
     return output;
@@ -202,11 +202,11 @@ export default class Measure extends Interaction {
     });
     let output;
     if (length > 100) {
-      output = `<font class="ol-tooltip-value">${Math.round(
+      output = `<font class='ol-tooltip-value'>${Math.round(
         (length / 1000) * 100
       ) / 100}</font> 千米`;
     } else {
-      output = `<font class="ol-tooltip-value">${Math.round(length * 100) /
+      output = `<font class='ol-tooltip-value'>${Math.round(length * 100) /
         100}</font> 米`;
     }
     return output;

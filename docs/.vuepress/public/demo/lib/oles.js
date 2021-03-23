@@ -46340,8 +46340,8 @@
     }(BaseObject));
 
     const measureLayerId = 'measureLayer';
-    const continuePolygonMsg = "单击确定地点，双击结束";
-    const continueLineMsg = "单击确定地点，双击结束";
+    const continuePolygonMsg = '单击确定地点，双击结束';
+    const continueLineMsg = '单击确定地点，双击结束';
     class Measure extends Interaction {
       constructor(options = {}) {
         super();
@@ -46376,7 +46376,7 @@
       stop() {
         this.map_.removeOverlay(this.helpTooltip_);
         this.map_.un('pointermove', this.handlePointerMove_);
-        this.map_.getViewport().removeEventListener("mouseout", this.handleMouseOut_);
+        this.map_.getViewport().removeEventListener('mouseout', this.handleMouseOut_);
         this.map_.removeInteraction(this.drawInteraction_);
       }
 
@@ -46422,7 +46422,7 @@
         this.updateDblClickInteraction_(false);
         this.sketch_ = evt.feature;
         let tooltipCoord = evt.coordinate;
-        this.listener_ = this.sketch_.getGeometry().on("change", e => {
+        this.listener_ = this.sketch_.getGeometry().on('change', e => {
           const geom = e.target;
           let output;
 
@@ -46443,15 +46443,15 @@
         setTimeout(() => {
           this.updateDblClickInteraction_(true);
         }, 1000);
-        this.measureTooltipElement_.className = "ol-tooltip ol-tooltip-static";
-        const closeElement = document.createElement("span");
-        closeElement.className = "ol-tooltip-close";
-        closeElement.innerHTML = "X";
+        this.measureTooltipElement_.className = 'ol-tooltip ol-tooltip-static';
+        const closeElement = document.createElement('span');
+        closeElement.className = 'ol-tooltip-close';
+        closeElement.innerHTML = 'X';
         this.measureTooltipElement_.appendChild(closeElement);
         this.measureTooltip_.setOffset([0, -7]);
         closeElement.feature = this.sketch_;
         closeElement.overlay = this.measureTooltip_;
-        closeElement.addEventListener("click", e => {
+        closeElement.addEventListener('click', e => {
           const {
             feature,
             overlay
@@ -46486,12 +46486,12 @@
           this.helpTooltipElement_.parentNode.removeChild(this.helpTooltipElement_);
         }
 
-        this.helpTooltipElement_ = document.createElement("div");
-        this.helpTooltipElement_.className = "ol-tooltip hidden";
+        this.helpTooltipElement_ = document.createElement('div');
+        this.helpTooltipElement_.className = 'ol-tooltip hidden';
         this.helpTooltip_ = new Overlay({
           element: this.helpTooltipElement_,
           offset: [15, 0],
-          positioning: "center-left"
+          positioning: 'center-left'
         });
         this.map_.addOverlay(this.helpTooltip_);
       }
@@ -46501,8 +46501,8 @@
           this.measureTooltipElement_.parentNode.removeChild(this.measureTooltipElement_);
         }
 
-        this.measureTooltipElement_ = document.createElement("div");
-        this.measureTooltipElement_.className = "ol-tooltip ol-tooltip-measure";
+        this.measureTooltipElement_ = document.createElement('div');
+        this.measureTooltipElement_.className = 'ol-tooltip ol-tooltip-measure';
         this.measureTooltip_ = new Overlay({
           element: this.measureTooltipElement_,
           offset: [0, -15],
@@ -46516,7 +46516,7 @@
           return;
         }
 
-        let helpMsg = "单击开始绘制";
+        let helpMsg = '单击开始绘制';
 
         if (this.sketch_) {
           const geom = this.sketch_.getGeometry();
@@ -46530,11 +46530,11 @@
 
         this.helpTooltipElement_.innerHTML = helpMsg;
         this.helpTooltip_.setPosition(evt.coordinate);
-        this.helpTooltipElement_.classList.remove("hidden");
+        this.helpTooltipElement_.classList.remove('hidden');
       }
 
       handleMouseOut_() {
-        this.helpTooltipElement_.classList.add("hidden");
+        this.helpTooltipElement_.classList.add('hidden');
       }
 
       calculateArea_(polygon) {
@@ -46544,9 +46544,9 @@
         let output;
 
         if (area > 10000) {
-          output = `<font class="ol-tooltip-value">${Math.round(area / 1000000 * 100) / 100}</font> 平方千米`;
+          output = `<font class='ol-tooltip-value'>${Math.round(area / 1000000 * 100) / 100}</font> 平方千米`;
         } else {
-          output = `<font class="ol-tooltip-value">${Math.round(area * 100) / 100}</font> 平方米`;
+          output = `<font class='ol-tooltip-value'>${Math.round(area * 100) / 100}</font> 平方米`;
         }
 
         return output;
@@ -46559,9 +46559,9 @@
         let output;
 
         if (length > 100) {
-          output = `<font class="ol-tooltip-value">${Math.round(length / 1000 * 100) / 100}</font> 千米`;
+          output = `<font class='ol-tooltip-value'>${Math.round(length / 1000 * 100) / 100}</font> 千米`;
         } else {
-          output = `<font class="ol-tooltip-value">${Math.round(length * 100) / 100}</font> 米`;
+          output = `<font class='ol-tooltip-value'>${Math.round(length * 100) / 100}</font> 米`;
         }
 
         return output;

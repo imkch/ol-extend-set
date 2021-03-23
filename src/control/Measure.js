@@ -1,6 +1,6 @@
 import Control from 'ol/control/Control';
-import EventType from 'ol/events/EventType.js';
-import { CLASS_CONTROL, CLASS_UNSELECTABLE } from 'ol/css.js';
+import EventType from 'ol/events/EventType';
+import { CLASS_CONTROL, CLASS_UNSELECTABLE } from 'ol/css';
 
 import MeasureInteraction from '../interaction/Measure';
 
