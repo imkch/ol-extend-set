@@ -46597,9 +46597,63 @@
 
     }
 
+    class FullScreen extends Interaction {
+      constructor(options = {}) {
+        super(options);
+        this.targetElem_ = typeof options.target === 'string' ? document.getElementById(options.target) : options.target;
+      }
+
+      entry() {
+        if (!this.isSupported_() || this.isFullScreen_()) return;
+        const elem = this.targetElem_ || this.getMap().getTargetElement() || document;
+
+        if (elem.webkitRequestFullScreen) {
+          elem.webkitRequestFullScreen();
+        } else if (elem.mozRequestFullScreen) {
+          elem.mozRequestFullScreen();
+        } else if (elem.requestFullScreen) {
+          elem.requestFullscreen();
+        } else {
+          console.log('error');
+        }
+      }
+
+      exit() {
+        if (!this.isFullScreen_()) return;
+        const elem = document;
+
+        if (elem.webkitCancelFullScreen) {
+          elem.webkitCancelFullScreen();
+        } else if (elem.mozCancelFullScreen) {
+          elem.mozCancelFullScreen();
+        } else if (elem.cancelFullScreen) {
+          elem.cancelFullScreen();
+        } else if (elem.exitFullscreen) {
+          elem.exitFullscreen();
+        } else {
+          console.log('error');
+        }
+      }
+
+      getState() {
+        return this.isFullScreen_();
+      }
+
+      isFullScreen_() {
+        return !!(document['webkitIsFullScreen'] || document['msFullscreenElement'] || document.fullscreenElement);
+      }
+
+      isSupported_() {
+        const body = document.body;
+        return !!(body['webkitRequestFullscreen'] || body['msRequestFullscreen'] && document['msFullscreenEnabled'] || body.requestFullscreen && document.fullscreenEnabled);
+      }
+
+    }
+
     var interaction = {
       Snapshot,
-      Measure
+      Measure,
+      FullScreen
     };
 
     var __extends$14 = (undefined && undefined.__extends) || (function () {
@@ -46842,9 +46896,53 @@
 
     }
 
+    class FullScreen$1 extends Control {
+      constructor(options = {}) {
+        super({
+          element: document.createElement('div'),
+          target: options.target
+        });
+        const className = options.className !== undefined ? options.className : 'ol-full-screen';
+        const label = options.label !== undefined ? options.label : 'F';
+        const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '全屏';
+        const button = document.createElement('button');
+        button.setAttribute('type', 'button');
+        button.title = tipLabel;
+        button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
+        button.addEventListener(EventType.CLICK, this.handleClick_.bind(this), false);
+        const cssClasses = className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
+        const element = this.element;
+        element.className = cssClasses;
+        element.appendChild(button);
+      }
+
+      handleClick_(event) {
+        event.preventDefault();
+        this.fullScreen_();
+      }
+
+      fullScreen_() {
+        const map = this.getMap();
+        let fullScreenInteraction = map.getInteractions().getArray().find(interaction => interaction instanceof FullScreen);
+
+        if (!fullScreenInteraction) {
+          fullScreenInteraction = new FullScreen();
+          map.addInteraction(fullScreenInteraction);
+        }
+
+        if (fullScreenInteraction.getState()) {
+          fullScreenInteraction.exit();
+        } else {
+          fullScreenInteraction.entry();
+        }
+      }
+
+    }
+
     var control = {
       Snapshot: Snapshot$1,
-      Measure: Measure$1
+      Measure: Measure$1,
+      FullScreen: FullScreen$1
     };
 
     var oles = {
