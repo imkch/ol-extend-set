@@ -46649,10 +46649,86 @@
 
     }
 
+    const FilterMode = {
+      GRAY: 'gray'
+    };
+    class Filter extends Interaction {
+      constructor(options = {}) {
+        super();
+        this.layers_ = options.layers || [];
+        this.mode_ = options.mode || FilterMode.GRAY;
+        this.state_ = false;
+      }
+
+      render() {
+        this.state_ = true;
+        this.layers_.forEach(layer => {
+          const context = layer.getRenderer().context;
+          this.filter_(context);
+          const listener_ = layer.on('postrender', this.handlePostRender_.bind(this));
+          layer.listener_ = listener_;
+        });
+      }
+
+      reset() {
+        this.state_ = false;
+        this.layers_.forEach(layer => {
+          unByKey(layer.listener_);
+          layer.setOpacity(layer.getOpacity() === 1 ? 0.99 : 1); // TODO：使地图刷新
+        });
+      }
+
+      getState() {
+        return this.state_;
+      }
+
+      getMode() {
+        return this.mode_;
+      }
+
+      setLayers(layers) {
+        this.layers_ = layers || [];
+        this.render();
+      }
+
+      setMode(mode) {
+        this.mode_ = mode;
+        this.render();
+      }
+
+      handlePostRender_(e) {
+        const context = e.context;
+        this.filter_(context);
+      }
+
+      filter_(context) {
+        const w = context.canvas.width;
+        const h = context.canvas.height;
+        let imageData = context.getImageData(0, 0, w, h);
+
+        for (let x = 0; x < imageData.width; x++) {
+          for (let y = 0; y < imageData.height; y++) {
+            let idx = (x + y * imageData.width) * 4;
+            let r = imageData.data[idx + 0];
+            let g = imageData.data[idx + 1];
+            let b = imageData.data[idx + 2];
+            let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            imageData.data[idx + 0] = gray;
+            imageData.data[idx + 1] = gray;
+            imageData.data[idx + 2] = gray;
+          }
+        }
+
+        context.putImageData(imageData, 0, 0);
+      }
+
+    }
+
     var interaction = {
       Snapshot,
       Measure,
-      FullScreen
+      FullScreen,
+      Filter
     };
 
     var __extends$14 = (undefined && undefined.__extends) || (function () {
@@ -46947,10 +47023,57 @@
 
     }
 
+    class Filter$1 extends Control {
+      constructor(options = {}) {
+        super({
+          element: document.createElement('div'),
+          target: options.target
+        });
+        this.layers_ = options.layers || [];
+        const className = options.className !== undefined ? options.className : 'ol-filter';
+        const label = options.label !== undefined ? options.label : 'F';
+        const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '滤镜';
+        const button = document.createElement('button');
+        button.setAttribute('type', 'button');
+        button.title = tipLabel;
+        button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
+        button.addEventListener(EventType.CLICK, this.handleClick_.bind(this), false);
+        const cssClasses = className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
+        const element = this.element;
+        element.className = cssClasses;
+        element.appendChild(button);
+      }
+
+      handleClick_(event) {
+        event.preventDefault();
+        this.filter_();
+      }
+
+      filter_() {
+        const map = this.getMap();
+        let filterInteraction = map.getInteractions().getArray().find(interaction => interaction instanceof Filter);
+
+        if (!filterInteraction) {
+          filterInteraction = new Filter({
+            layers: this.layers_
+          });
+          map.addInteraction(filterInteraction);
+        }
+
+        if (!filterInteraction.getState()) {
+          filterInteraction.render();
+        } else {
+          filterInteraction.reset();
+        }
+      }
+
+    }
+
     var control = {
       Snapshot: Snapshot$1,
       Measure: Measure$1,
-      FullScreen: FullScreen$1
+      FullScreen: FullScreen$1,
+      Filter: Filter$1
     };
 
     var oles = {
