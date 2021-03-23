@@ -1,6 +1,6 @@
 import Interaction from 'ol/interaction/Interaction';
 import Event from 'ol/events/Event';
-import domToImage from "dom-to-image";
+import domToImage from 'dom-to-image';
 
 export class SnapshotEvent extends Event {
   constructor(type, data) {

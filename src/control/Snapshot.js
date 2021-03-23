@@ -1,7 +1,7 @@
 import Control from 'ol/control/Control';
 import EventType from 'ol/events/EventType';
 import { CLASS_CONTROL, CLASS_UNSELECTABLE } from 'ol/css';
-import fileSaver from "file-saver";
+import fileSaver from 'file-saver';
 
 import SnapshotInteraction from '../interaction/Snapshot';
 
