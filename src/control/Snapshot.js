@@ -1,6 +1,7 @@
 import Control from 'ol/control/Control';
-import EventType from 'ol/events/EventType.js';
-import { CLASS_CONTROL, CLASS_UNSELECTABLE } from 'ol/css.js';
+import EventType from 'ol/events/EventType';
+import { CLASS_CONTROL, CLASS_UNSELECTABLE } from 'ol/css';
+import fileSaver from "file-saver";
 
 import SnapshotInteraction from '../interaction/Snapshot';
 
@@ -49,6 +50,9 @@ export default class Snapshot extends Control {
     if (!snapshotInteraction) {
       snapshotInteraction = new SnapshotInteraction();
       map.addInteraction(snapshotInteraction);
+      snapshotInteraction.on('complete', evt => {
+        fileSaver(evt.imageData, `MAP-${Math.round(Math.random()*89999+10000)}.png`);
+      });
     }
     snapshotInteraction.toImage();
   }
