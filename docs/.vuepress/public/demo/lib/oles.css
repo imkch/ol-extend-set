@@ -35,3 +35,24 @@
   text-align: center;
   cursor: pointer;
 }
+.ol-swipe-slider {
+  position: absolute;
+  background: #999;
+}
+.ol-swipe-slider.horizontal {
+  width: 4px;
+  height: 100%;
+  left: 50%;
+  top: 0;
+  margin-left: -2px;
+  cursor: col-resize;
+}
+
+.ol-swipe-slider.vertical {
+  width: 100%;
+  height: 4px;
+  left: 0;
+  top: 50%;
+  margin-top: -2px;
+  cursor: row-resize;
+}
