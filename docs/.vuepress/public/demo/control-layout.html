@@ -49,6 +49,10 @@
         imgLayer
       ]
     });
+    const controls = map.getControls().getArray();
+    controls.forEach(item => {
+      map.removeControl(item);
+    });
     const boxControl = {
       instance: new oles.control.Box(),
       children: [
