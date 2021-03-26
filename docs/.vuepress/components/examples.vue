@@ -31,9 +31,9 @@ export default {
               url: '../demo/wmts.html'
             },
             {
-              cover: '../img/tdt-wmts.png',
+              cover: '../img/tdt.png',
               name: '加载天地图',
-              url: '../demo/tdt-wmts.html'
+              url: '../demo/tdt.html'
             },
             {
               cover: '../img/arcgis-xyz.png',
@@ -79,6 +79,26 @@ export default {
               cover: '../img/snapshot.png',
               name: '地图快照',
               url: '../demo/snapshot.html'
+            },
+            {
+              cover: '../img/filter.png',
+              name: '地图滤镜',
+              url: '../demo/filter.html'
+            },
+            {
+              cover: '../img/measure.png',
+              name: '地图测量',
+              url: '../demo/measure.html'
+            },
+            {
+              cover: '../img/full-screen.png',
+              name: '地图全屏',
+              url: '../demo/full-screen.html'
+            },
+            {
+              cover: '../img/swipe.png',
+              name: '卷帘对比',
+              url: '../demo/swipe.html'
             }
           ]
         }
