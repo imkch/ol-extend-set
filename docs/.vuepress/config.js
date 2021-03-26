@@ -32,7 +32,7 @@ module.exports = {
                 ['supermap-vector-tile', 'SuperMap矢量切片'],
                 ['arcgis-vector-tile', 'ArcGIS矢量切片'],
                 ['wmts', 'WMTS'],
-                ['tdt-wmts', '天地图'],
+                ['tdt', '天地图'],
                 ['arcgis-xyz', 'ArcGIS切片服务']
               ]
             }

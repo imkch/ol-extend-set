@@ -37717,7 +37717,7 @@
       return tileGird;
     };
 
-    class WMTSTDT extends WMTS {
+    class TDT extends WMTS {
       constructor(options) {
         const matrixSet = options.matrixSet || 'c';
         const layer = options.layer || 'vec';
@@ -38479,7 +38479,7 @@
     var source$1 = {
       VectorTileArcGISRest: VectorTileArcGISRest$2,
       VectorTileSuperMapRest: VectorTileArcGISRest$3,
-      WMTSTDT,
+      TDT,
       XYZArcGISRest,
       TileSuperMapRest,
       ImageSuperMapRest
