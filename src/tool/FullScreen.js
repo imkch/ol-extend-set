@@ -1,13 +1,10 @@
-import Interaction from 'ol/interaction/Interaction';
-
-export default class FullScreen extends Interaction {
+export default class FullScreen {
   constructor(options ={}) {
-    super(options);
     this.targetElement_ = typeof options.target === 'string' ? document.getElementById(options.target) : options.target;
   }
   entry() {
     if(!this.isSupported_() || this.isFullScreen_()) return;
-    const elem = this.targetElement_ || this.getMap().getTargetElement() || document;
+    const elem = this.targetElement_ || document.body;
     if (elem.webkitRequestFullScreen) {
       elem.webkitRequestFullScreen();
     } else if (elem.mozRequestFullScreen) {
@@ -33,7 +30,7 @@ export default class FullScreen extends Interaction {
       console.log('error');
     }
   }
-  getState() {
+  getActive() {
     return this.isFullScreen_();
   }
   isFullScreen_() {

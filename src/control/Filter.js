@@ -1,8 +1,8 @@
 import Control from 'ol/control/Control';
 import EventType from 'ol/events/EventType';
-import { CLASS_CONTROL, CLASS_UNSELECTABLE } from 'ol/css';
+import { CLASS_UNSELECTABLE } from 'ol/css';
 
-import FilterInteraction from '../interaction/Filter';
+import FilterTool from '../tool/Filter';
 
 export default class Filter extends Control {
   constructor(options = {}) {
@@ -11,14 +11,12 @@ export default class Filter extends Control {
       target: options.target
     });
 
-    this.layers_ = options.layers || [];
-    
-    const className = options.className !== undefined ? options.className : 'ol-filter';
+    this.layers_ = options.layers;
 
     const label = options.label !== undefined ? options.label : 'F';
     const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '滤镜';
-    const button = document.createElement('button');
-    button.setAttribute('type', 'button');
+    const button = document.createElement('div');
+    button.className = 'oles-button';
     button.title = tipLabel;
     button.appendChild(
       typeof label === 'string' ? document.createTextNode(label) : label
@@ -30,30 +28,23 @@ export default class Filter extends Control {
       false
     );
 
-    const cssClasses =
-      className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
-    const element = this.element;
-    element.className = cssClasses;
-    element.appendChild(button);
+    const cssClasses = `${CLASS_UNSELECTABLE} oles-control oles-filter`;
+    this.element.className = cssClasses;
+    this.element.appendChild(button);
   }
   handleClick_(event) {
     event.preventDefault();
-    this.filter_();
+    this.mapFilter_();
   }
-  filter_() {
-    const map = this.getMap();
-    let filterInteraction = map
-      .getInteractions()
-      .getArray()
-      .find(interaction => interaction instanceof FilterInteraction);
-    if(!filterInteraction) {
-      filterInteraction = new FilterInteraction({layers: this.layers_});
-      map.addInteraction(filterInteraction);
+  mapFilter_() {
+    if(!this.filterTool) {
+      const layers = this.layers_ || this.getMap().getLayers().getArray();
+      this.filterTool = new FilterTool({layers});
     }
-    if(!filterInteraction.getState()) {
-      filterInteraction.render();
+    if(!this.filterTool.getActive()) {
+      this.filterTool.render();
     } else {
-      filterInteraction.reset();
+      this.filterTool.reset();
     }
   }
 };

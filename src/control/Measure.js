@@ -1,8 +1,8 @@
 import Control from 'ol/control/Control';
 import EventType from 'ol/events/EventType';
-import { CLASS_CONTROL, CLASS_UNSELECTABLE } from 'ol/css';
+import { CLASS_UNSELECTABLE } from 'ol/css';
 
-import MeasureInteraction from '../interaction/Measure';
+import MeasureTool from '../tool/Measure';
 
 export default class Measure extends Control {
   constructor(options = {}) {
@@ -16,18 +16,18 @@ export default class Measure extends Control {
     const lengthLabel = options.label !== undefined ? options.label : 'L';
     const lengthTipLabel = options.tipLabel !== undefined ? options.tipLabel : '测量长度';
 
-    const className = options.className !== undefined ? options.className : 'ol-measure';
-    const cssClasses =
-      className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
-    const element = this.element;
-    element.className = cssClasses;
+    const cssClasses = `${CLASS_UNSELECTABLE} oles-control oles-flex oles-measure`;
+    this.element.className = cssClasses;
 
-    this.createButton_(areaLabel, areaTipLabel, element, 'area');
-    this.createButton_(lengthLabel, lengthTipLabel, element, 'length');
+    this.createButton_(areaLabel, areaTipLabel, this.element, 'area');
+    const divider = document.createElement('div');
+    divider.className = 'oles-button-divider';
+    this.element.appendChild(divider);
+    this.createButton_(lengthLabel, lengthTipLabel, this.element, 'length');
   }
   createButton_(label, tipLabel, element, type) {
-    const button = document.createElement('button');
-    button.setAttribute('type', 'button');
+    const button = document.createElement('div');
+    button.className = 'oles-button';
     button.title = tipLabel;
     button.appendChild(
       typeof label === 'string' ? document.createTextNode(label) : label
@@ -46,16 +46,9 @@ export default class Measure extends Control {
   }
   measure_(type) {
     const map = this.getMap();
-    let measureInteraction = map
-      .getInteractions()
-      .getArray()
-      .find(interaction => {
-        return interaction instanceof MeasureInteraction;
-      });
-    if (!measureInteraction) {
-      measureInteraction = new MeasureInteraction();
-      map.addInteraction(measureInteraction);
+    if (!this.measureTool) {
+      this.measureTool = new MeasureTool(map);
     }
-    measureInteraction.excute(type);
+    this.measureTool.excute(type);
   }
 }

@@ -1,0 +1,41 @@
+
+.oles-container {
+  display: flex;
+  align-items: flex-start;
+  position: absolute;
+  max-width: 100%;
+}
+.oles-top-left {
+  top: 0;
+  left: 0;
+}
+.oles-top-right {
+  top: 0;
+  right: 0;
+}
+.oles-bottom-left {
+  bottom: 0;
+  left: 0;
+}
+.oles-bottom-right {
+  bottom: 0;
+  right: 0;
+}
+.oles-row {
+  flex-direction: row;
+}
+.oles-column {
+  flex-direction: column;
+}
+.oles-row-reverse {
+  flex-direction: row-reverse;
+}
+.oles-column-reverse {
+  flex-direction: column-reverse;
+}
+.oles-container .ol-control {
+  position: relative;
+}
+.oles-container > div {
+  margin: 2px;
+}

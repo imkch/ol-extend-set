@@ -1,19 +1,17 @@
-import Interaction from 'ol/interaction/Interaction';
 import { unByKey } from 'ol/Observable';
 
 const FilterMode = {
   GRAY: 'gray'
 };
 
-export default class Filter extends Interaction {
+export default class Filter {
   constructor(options = {}) {
-    super();
     this.layers_ = options.layers || [];
     this.mode_ = options.mode || FilterMode.GRAY;
-    this.state_ = false;
+    this.active_ = false;
   }
   render() {
-    this.state_ = true;
+    this.active_ = true;
     this.layers_.forEach(layer => {
       const context = layer.getRenderer().context;
       this.filter_(context);
@@ -22,14 +20,14 @@ export default class Filter extends Interaction {
     });
   }
   reset() {
-    this.state_ = false;
+    this.active_ = false;
     this.layers_.forEach(layer => {
       unByKey(layer.listener_);
       layer.setOpacity(layer.getOpacity() === 1 ? 0.99 : 1); // TODO：使地图刷新
     });
   }
-  getState() {
-    return this.state_;
+  getActive() {
+    return this.active_;
   }
   getMode() {
     return this.mode_;

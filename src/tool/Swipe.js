@@ -1,21 +1,24 @@
-import Interaction from 'ol/interaction/Interaction';
 import { unByKey } from 'ol/Observable';
 
 import './swipe.css';
 
-export default class Swipe extends Interaction {
-  constructor(options = {}) {
-    super();
-
+export default class Swipe {
+  constructor(map, options = {}) {
+    if (!map) {
+      console.error("map is required");
+      return;
+    }
+    this.map_ = map;
     this.layers_ = options.layers || [];
     this.position_ = options.position || 0.5; // [0,1]
     this.direction_ = options.direction || 'vertical'; // vertical|horizontal
-    this.state_ = false;
+    this.active_ = false;
     this.listeners_ = [];
   }
   render() {
+    this.reset();
     this.createSlider_();
-    this.state_ = true;
+    this.active_ = true;
     this.listeners_ = [];
     this.layers_.forEach(layer => {
       const preListener = layer.on('prerender', this.handlePreRender_.bind(this));
@@ -23,19 +26,19 @@ export default class Swipe extends Interaction {
       const postListener = layer.on('postrender', this.handlePostRender_.bind(this));
       this.listeners_.push(postListener);
     });
-    this.getMap().renderSync();
+    this.map_.renderSync();
   }
   reset() {
     this.removeSlider_();
-    this.state_ = false;
+    this.active_ = false;
     this.listeners_.forEach(listener => {
       unByKey(listener);
     });
     this.listeners_ = [];
-    this.getMap().renderSync();
+    this.map_.renderSync();
   }
-  getState() {
-    return this.state_;
+  getActive() {
+    return this.active_;
   }
   setLayers(layers) {
     this.layers_ = layers || [];
@@ -44,6 +47,8 @@ export default class Swipe extends Interaction {
   setDirection(direction) {
     this.direction_ = direction;
     this.render();
+    // this.removeSlider_();
+    // this.createSlider_();
   }
   getDirection() {
     return this.direction_;
@@ -59,13 +64,13 @@ export default class Swipe extends Interaction {
     if (this.sliderElem_) return;
     const sliderElem = document.createElement('div');
     if (this.direction_ === 'horizontal') {
-      sliderElem.className = `ol-swipe-slider horizontal`;
-      const mapWidth = this.getMap().getSize()[0];
-      sliderElem.style.left = this.position_ * mapWidth;
+      sliderElem.className = `oles-swipe-slider horizontal`;
+      const mapWidth = this.map_.getSize()[0];
+      sliderElem.style.left = this.position_ * mapWidth + 'px';
     } else {
-      sliderElem.className = `ol-swipe-slider vertical`;
-      const mapHeight = this.getMap().getSize()[1];
-      sliderElem.style.top = this.position_ * mapHeight;
+      sliderElem.className = `oles-swipe-slider vertical`;
+      const mapHeight = this.map_.getSize()[1];
+      sliderElem.style.top = this.position_ * mapHeight + 'px';
     }
     
     sliderElem.addEventListener("mousedown", this.handleMouseDown_.bind(this));
@@ -73,13 +78,13 @@ export default class Swipe extends Interaction {
     document.body.addEventListener("mouseleave", this.handleMouseLeave_.bind(this));
     document.body.addEventListener("mousemove", this.handleMouseMove_.bind(this));
     this.sliderElem_ = sliderElem;
-    const mapElem = this.getMap().getTargetElement();
+    const mapElem = this.map_.getTargetElement();
     mapElem.style.position = 'relative';
     mapElem.appendChild(sliderElem);
   }
   removeSlider_() {
     if (!this.sliderElem_) return;
-    const mapElem = this.getMap().getTargetElement();
+    const mapElem = this.map_.getTargetElement();
     mapElem.style = undefined;
     mapElem.removeChild(this.sliderElem_);
     this.sliderElem_ = undefined;
@@ -132,35 +137,33 @@ export default class Swipe extends Interaction {
     }
   }
   handleMouseDown_(e) {
-    this.active_ = true;
+    this.mouseActive_ = true;
   }
   handleMouseUp_(e) {
-    this.active_ = false;
+    this.mouseActive_ = false;
   }
   handleMouseLeave_(e) {
-    this.active_ = false;
+    this.mouseActive_ = false;
   }
   handleMouseMove_(e) {
-    if (!this.active_) return;
+    if (!this.mouseActive_) return;
     if (this.direction_ === 'horizontal') {
       let clientX = e.clientX;
-      const offsetLeft = clientX - this
-        .getMap()
+      const offsetLeft = clientX - this.map_
         .getTargetElement()
         .getBoundingClientRect().left;
-      this.sliderElem_.style.left = offsetLeft;
-      const mapWidth = this.getMap().getSize()[0];
+      this.sliderElem_.style.left = offsetLeft + 'px';
+      const mapWidth = this.map_.getSize()[0];
       this.position_ = offsetLeft / mapWidth;
     } else {
       let clientY = e.clientY;
-      const offsetTop = clientY - this
-        .getMap()
+      const offsetTop = clientY - this.map_
         .getTargetElement()
         .getBoundingClientRect().top;
-      this.sliderElem_.style.top = offsetTop;
-      const mapHeight = this.getMap().getSize()[1];
+      this.sliderElem_.style.top = offsetTop + 'px';
+      const mapHeight = this.map_.getSize()[1];
       this.position_ = offsetTop / mapHeight;
     }
-    this.getMap().renderSync();
+    this.map_.renderSync();
   }
 };

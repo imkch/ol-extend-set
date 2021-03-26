@@ -1,0 +1,8 @@
+.oles-box {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  right: 6px;
+  pointer-events: none !important;
+}

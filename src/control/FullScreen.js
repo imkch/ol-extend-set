@@ -1,8 +1,8 @@
 import Control from 'ol/control/Control';
 import EventType from 'ol/events/EventType';
-import { CLASS_CONTROL, CLASS_UNSELECTABLE } from 'ol/css';
+import { CLASS_UNSELECTABLE } from 'ol/css';
 
-import FullScreenInteraction from '../interaction/FullScreen';
+import FullScreenTool from '../tool/FullScreen';
 
 export default class FullScreen extends Control {
   constructor(options = {}) {
@@ -10,13 +10,11 @@ export default class FullScreen extends Control {
       element: document.createElement('div'),
       target: options.target
     });
-    
-    const className = options.className !== undefined ? options.className : 'ol-full-screen';
 
     const label = options.label !== undefined ? options.label : 'F';
     const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '全屏';
-    const button = document.createElement('button');
-    button.setAttribute('type', 'button');
+    const button = document.createElement('div');
+    button.className = 'oles-button';
     button.title = tipLabel;
     button.appendChild(
       typeof label === 'string' ? document.createTextNode(label) : label
@@ -28,30 +26,22 @@ export default class FullScreen extends Control {
       false
     );
 
-    const cssClasses =
-      className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
-    const element = this.element;
-    element.className = cssClasses;
-    element.appendChild(button);
+    const cssClasses = `${CLASS_UNSELECTABLE} oles-control oles-full-screen`;
+    this.element.className = cssClasses;
+    this.element.appendChild(button);
   }
   handleClick_(event) {
     event.preventDefault();
     this.fullScreen_();
   }
   fullScreen_() {
-    const map = this.getMap();
-    let fullScreenInteraction = map
-      .getInteractions()
-      .getArray()
-      .find(interaction => interaction instanceof FullScreenInteraction);
-    if(!fullScreenInteraction) {
-      fullScreenInteraction = new FullScreenInteraction();
-      map.addInteraction(fullScreenInteraction);
+    if(!this.fullScreenTool) {
+      this.fullScreenTool = new FullScreenTool();
     }
-    if(fullScreenInteraction.getState()) {
-      fullScreenInteraction.exit();
+    if(this.fullScreenTool.getActive()) {
+      this.fullScreenTool.exit();
     } else {
-      fullScreenInteraction.entry();
+      this.fullScreenTool.entry();
     }
   }
 };

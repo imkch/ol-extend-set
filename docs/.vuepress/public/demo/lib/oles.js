@@ -3315,13 +3315,6 @@
      */
     var CLASS_UNSELECTABLE = 'ol-unselectable';
     /**
-     * The CSS class for controls.
-     *
-     * @const
-     * @type {string}
-     */
-    var CLASS_CONTROL = 'ol-control';
-    /**
      * From http://stackoverflow.com/questions/10135697/regex-to-parse-any-css-font
      * @type {RegExp}
      */
@@ -38562,13 +38555,30 @@
     };
 
     /**
-     * @module ol/interaction/Property
+     * @module ol/MapEventType
      */
     /**
      * @enum {string}
      */
-    var InteractionProperty = {
-        ACTIVE: 'active',
+    var MapEventType = {
+        /**
+         * Triggered after a map frame is rendered.
+         * @event module:ol/MapEvent~MapEvent#postrender
+         * @api
+         */
+        POSTRENDER: 'postrender',
+        /**
+         * Triggered when the map starts moving.
+         * @event module:ol/MapEvent~MapEvent#movestart
+         * @api
+         */
+        MOVESTART: 'movestart',
+        /**
+         * Triggered after the map is moved.
+         * @event module:ol/MapEvent~MapEvent#moveend
+         * @api
+         */
+        MOVEEND: 'moveend',
     };
 
     var __extends$N = (undefined && undefined.__extends) || (function () {
@@ -38585,98 +38595,190 @@
         };
     })();
     /**
-     * Object literal with config options for interactions.
-     * @typedef {Object} InteractionOptions
-     * @property {function(import("../MapBrowserEvent.js").default):boolean} handleEvent
-     * Method called by the map to notify the interaction that a browser event was
-     * dispatched to the map. If the function returns a falsy value, propagation of
-     * the event to other interactions in the map's interactions chain will be
-     * prevented (this includes functions with no explicit return). The interactions
-     * are traversed in reverse order of the interactions collection of the map.
+     * @typedef {Object} Options
+     * @property {HTMLElement} [element] The element is the control's
+     * container element. This only needs to be specified if you're developing
+     * a custom control.
+     * @property {function(import("../MapEvent.js").default):void} [render] Function called when
+     * the control should be re-rendered. This is called in a `requestAnimationFrame`
+     * callback.
+     * @property {HTMLElement|string} [target] Specify a target if you want
+     * the control to be rendered outside of the map's viewport.
      */
     /**
      * @classdesc
-     * Abstract base class; normally only used for creating subclasses and not
-     * instantiated in apps.
-     * User actions that change the state of the map. Some are similar to controls,
-     * but are not associated with a DOM element.
-     * For example, {@link module:ol/interaction/KeyboardZoom~KeyboardZoom} is
-     * functionally the same as {@link module:ol/control/Zoom~Zoom}, but triggered
-     * by a keyboard event not a button element event.
-     * Although interactions do not have a DOM element, some of them do render
-     * vectors and so are visible on the screen.
+     * A control is a visible widget with a DOM element in a fixed position on the
+     * screen. They can involve user input (buttons), or be informational only;
+     * the position is determined using CSS. By default these are placed in the
+     * container with CSS class name `ol-overlaycontainer-stopevent`, but can use
+     * any outside DOM element.
+     *
+     * This is the base class for controls. You can use it for simple custom
+     * controls by creating the element with listeners, creating an instance:
+     * ```js
+     * var myControl = new Control({element: myElement});
+     * ```
+     * and then adding this to the map.
+     *
+     * The main advantage of having this as a control rather than a simple separate
+     * DOM element is that preventing propagation is handled for you. Controls
+     * will also be objects in a {@link module:ol/Collection~Collection}, so you can use their methods.
+     *
+     * You can also extend this base for your own control class. See
+     * examples/custom-controls for an example of how to do this.
+     *
      * @api
      */
-    var Interaction = /** @class */ (function (_super) {
-        __extends$N(Interaction, _super);
+    var Control = /** @class */ (function (_super) {
+        __extends$N(Control, _super);
         /**
-         * @param {InteractionOptions=} opt_options Options.
+         * @param {Options} options Control options.
          */
-        function Interaction(opt_options) {
+        function Control(options) {
             var _this = _super.call(this) || this;
-            if (opt_options && opt_options.handleEvent) {
-                _this.handleEvent = opt_options.handleEvent;
+            var element = options.element;
+            if (element && !options.target && !element.style.pointerEvents) {
+                element.style.pointerEvents = 'auto';
             }
+            /**
+             * @protected
+             * @type {HTMLElement}
+             */
+            _this.element = element ? element : null;
+            /**
+             * @private
+             * @type {HTMLElement}
+             */
+            _this.target_ = null;
             /**
              * @private
              * @type {import("../PluggableMap.js").default}
              */
             _this.map_ = null;
-            _this.setActive(true);
+            /**
+             * @protected
+             * @type {!Array<import("../events.js").EventsKey>}
+             */
+            _this.listenerKeys = [];
+            if (options.render) {
+                _this.render = options.render;
+            }
+            if (options.target) {
+                _this.setTarget(options.target);
+            }
             return _this;
         }
         /**
-         * Return whether the interaction is currently active.
-         * @return {boolean} `true` if the interaction is active, `false` otherwise.
-         * @observable
-         * @api
+         * Clean up.
          */
-        Interaction.prototype.getActive = function () {
-            return /** @type {boolean} */ (this.get(InteractionProperty.ACTIVE));
+        Control.prototype.disposeInternal = function () {
+            removeNode(this.element);
+            _super.prototype.disposeInternal.call(this);
         };
         /**
-         * Get the map associated with this interaction.
+         * Get the map associated with this control.
          * @return {import("../PluggableMap.js").default} Map.
          * @api
          */
-        Interaction.prototype.getMap = function () {
+        Control.prototype.getMap = function () {
             return this.map_;
         };
         /**
-         * Handles the {@link module:ol/MapBrowserEvent map browser event}.
-         * @param {import("../MapBrowserEvent.js").default} mapBrowserEvent Map browser event.
-         * @return {boolean} `false` to stop event propagation.
-         * @api
-         */
-        Interaction.prototype.handleEvent = function (mapBrowserEvent) {
-            return true;
-        };
-        /**
-         * Activate or deactivate the interaction.
-         * @param {boolean} active Active.
-         * @observable
-         * @api
-         */
-        Interaction.prototype.setActive = function (active) {
-            this.set(InteractionProperty.ACTIVE, active);
-        };
-        /**
-         * Remove the interaction from its current map and attach it to the new map.
+         * Remove the control from its current map and attach it to the new map.
          * Subclasses may set up event handlers to get notified about changes to
          * the map here.
          * @param {import("../PluggableMap.js").default} map Map.
+         * @api
          */
-        Interaction.prototype.setMap = function (map) {
+        Control.prototype.setMap = function (map) {
+            if (this.map_) {
+                removeNode(this.element);
+            }
+            for (var i = 0, ii = this.listenerKeys.length; i < ii; ++i) {
+                unlistenByKey(this.listenerKeys[i]);
+            }
+            this.listenerKeys.length = 0;
             this.map_ = map;
+            if (this.map_) {
+                var target = this.target_
+                    ? this.target_
+                    : map.getOverlayContainerStopEvent();
+                target.appendChild(this.element);
+                if (this.render !== VOID) {
+                    this.listenerKeys.push(listen(map, MapEventType.POSTRENDER, this.render, this));
+                }
+                map.render();
+            }
         };
-        return Interaction;
+        /**
+         * Renders the control.
+         * @param {import("../MapEvent.js").default} mapEvent Map event.
+         * @api
+         */
+        Control.prototype.render = function (mapEvent) { };
+        /**
+         * This function is used to set a target element for the control. It has no
+         * effect if it is called after the control has been added to the map (i.e.
+         * after `setMap` is called on the control). If no `target` is set in the
+         * options passed to the control constructor and if `setTarget` is not called
+         * then the control is added to the map's overlay container.
+         * @param {HTMLElement|string} target Target.
+         * @api
+         */
+        Control.prototype.setTarget = function (target) {
+            this.target_ =
+                typeof target === 'string' ? document.getElementById(target) : target;
+        };
+        return Control;
     }(BaseObject));
+
+    class Container extends Control {
+      constructor(options = {}) {
+        super({
+          element: document.createElement('div'),
+          target: options.target
+        });
+        const position = options.position || 'top-left';
+        const direction = options.direction || 'row';
+        this.element.className = `oles-container oles-${position} oles-${direction}`;
+      }
+
+      appendChild(control) {
+        control.setTarget(this.element);
+        const map = this.getMap();
+        map.addControl(control);
+      }
+
+    }
+
+    class Container$1 extends Control {
+      constructor(options = {}) {
+        super({
+          element: document.createElement('div'),
+          target: options.target
+        });
+        this.element.className = `oles-box`;
+      }
+
+      appendChild(control) {
+        control.setTarget(this.element);
+        const map = this.getMap();
+        map.addControl(control);
+      }
+
+    }
 
     var commonjsGlobal$1 = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
     function createCommonjsModule$1(fn, module) {
     	return module = { exports: {} }, fn(module, module.exports), module.exports;
     }
+
+    var FileSaver_min = createCommonjsModule$1(function (module, exports) {
+    (function(a,b){b();})(commonjsGlobal$1,function(){function b(a,b){return "undefined"==typeof b?b={autoBom:!1}:"object"!=typeof b&&(console.warn("Deprecated: Expected third argument to be a object"),b={autoBom:!b}),b.autoBom&&/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(a.type)?new Blob(["\uFEFF",a],{type:a.type}):a}function c(a,b,c){var d=new XMLHttpRequest;d.open("GET",a),d.responseType="blob",d.onload=function(){g(d.response,b,c);},d.onerror=function(){console.error("could not download file");},d.send();}function d(a){var b=new XMLHttpRequest;b.open("HEAD",a,!1);try{b.send();}catch(a){}return 200<=b.status&&299>=b.status}function e(a){try{a.dispatchEvent(new MouseEvent("click"));}catch(c){var b=document.createEvent("MouseEvents");b.initMouseEvent("click",!0,!0,window,0,0,0,80,20,!1,!1,!1,!1,0,null),a.dispatchEvent(b);}}var f="object"==typeof window&&window.window===window?window:"object"==typeof self&&self.self===self?self:"object"==typeof commonjsGlobal$1&&commonjsGlobal$1.global===commonjsGlobal$1?commonjsGlobal$1:void 0,a=f.navigator&&/Macintosh/.test(navigator.userAgent)&&/AppleWebKit/.test(navigator.userAgent)&&!/Safari/.test(navigator.userAgent),g=f.saveAs||("object"!=typeof window||window!==f?function(){}:"download"in HTMLAnchorElement.prototype&&!a?function(b,g,h){var i=f.URL||f.webkitURL,j=document.createElement("a");g=g||b.name||"download",j.download=g,j.rel="noopener","string"==typeof b?(j.href=b,j.origin===location.origin?e(j):d(j.href)?c(b,g,h):e(j,j.target="_blank")):(j.href=i.createObjectURL(b),setTimeout(function(){i.revokeObjectURL(j.href);},4E4),setTimeout(function(){e(j);},0));}:"msSaveOrOpenBlob"in navigator?function(f,g,h){if(g=g||f.name||"download","string"!=typeof f)navigator.msSaveOrOpenBlob(b(f,h),g);else if(d(f))c(f,g,h);else {var i=document.createElement("a");i.href=f,i.target="_blank",setTimeout(function(){e(i);});}}:function(b,d,e,g){if(g=g||open("","_blank"),g&&(g.document.title=g.document.body.innerText="downloading..."),"string"==typeof b)return c(b,d,e);var h="application/octet-stream"===b.type,i=/constructor/i.test(f.HTMLElement)||f.safari,j=/CriOS\/[\d]+/.test(navigator.userAgent);if((j||h&&i||a)&&"undefined"!=typeof FileReader){var k=new FileReader;k.onloadend=function(){var a=k.result;a=j?a:a.replace(/^data:[^;]*;/,"data:attachment/file;"),g?g.location.href=a:location=a,g=null;},k.readAsDataURL(b);}else {var l=f.URL||f.webkitURL,m=l.createObjectURL(b);g?g.location=m:location.href=m,g=null,setTimeout(function(){l.revokeObjectURL(m);},4E4);}});f.saveAs=g.saveAs=g,(module.exports=g);});
+
+
+    });
 
     var domToImage = createCommonjsModule$1(function (module) {
     (function (global) {
@@ -39446,28 +39548,54 @@
     })();
     });
 
-    class SnapshotEvent extends BaseEvent {
-      constructor(type, data) {
-        super(type);
-        this.imageData = data;
-      }
-
-    }
-    const SnapshotEventType = {
-      COMPLETE: 'complete'
-    };
-    class Snapshot extends Interaction {
+    class Snapshot {
       constructor(options = {}) {
-        super();
         this.options_ = options;
       }
 
       toImage(target) {
         const customElement = target ? typeof target === 'string' ? document.getElementById(target) : target : undefined;
-        const mapElement = this.getMap() ? this.getMap().getTargetElement() : undefined;
-        const targetElement = customElement || mapElement || document;
-        domToImage.toBlob(targetElement, this.options_).then(data => {
-          this.dispatchEvent(new SnapshotEvent(SnapshotEventType.COMPLETE, data));
+        const targetElement = customElement || document;
+        return domToImage.toBlob(targetElement, this.options_);
+      }
+
+    }
+
+    class Snapshot$1 extends Control {
+      constructor(options = {}) {
+        super({
+          element: document.createElement('div'),
+          target: options.target
+        });
+        const label = options.label !== undefined ? options.label : 'S';
+        const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '快照';
+        const button = document.createElement('div');
+        button.className = 'oles-button';
+        button.title = tipLabel;
+        button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
+        button.addEventListener(EventType.CLICK, this.handleClick_.bind(this), false);
+        const cssClasses = `${CLASS_UNSELECTABLE} oles-control oles-snapshot`;
+        this.element.className = cssClasses;
+        this.element.appendChild(button);
+      }
+
+      handleClick_(event) {
+        event.preventDefault();
+        this.mapToImage_();
+      }
+
+      mapToImage_() {
+        if (!this.snapshotTool) {
+          this.snapshotTool = new Snapshot({
+            filter: node => {
+              return node.className !== 'ol-overlaycontainer-stopevent';
+            }
+          });
+        }
+
+        const mapElement = this.getMap().getTargetElement();
+        this.snapshotTool.toImage(mapElement).then(data => {
+          FileSaver_min.saveAs(data, `MAP-${Math.round(Math.random() * 89999 + 10000)}.png`);
         });
       }
 
@@ -39765,6 +39893,117 @@
     }(BaseObject));
 
     /**
+     * @module ol/interaction/Property
+     */
+    /**
+     * @enum {string}
+     */
+    var InteractionProperty = {
+        ACTIVE: 'active',
+    };
+
+    var __extends$P = (undefined && undefined.__extends) || (function () {
+        var extendStatics = function (d, b) {
+            extendStatics = Object.setPrototypeOf ||
+                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+                function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+            return extendStatics(d, b);
+        };
+        return function (d, b) {
+            extendStatics(d, b);
+            function __() { this.constructor = d; }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    })();
+    /**
+     * Object literal with config options for interactions.
+     * @typedef {Object} InteractionOptions
+     * @property {function(import("../MapBrowserEvent.js").default):boolean} handleEvent
+     * Method called by the map to notify the interaction that a browser event was
+     * dispatched to the map. If the function returns a falsy value, propagation of
+     * the event to other interactions in the map's interactions chain will be
+     * prevented (this includes functions with no explicit return). The interactions
+     * are traversed in reverse order of the interactions collection of the map.
+     */
+    /**
+     * @classdesc
+     * Abstract base class; normally only used for creating subclasses and not
+     * instantiated in apps.
+     * User actions that change the state of the map. Some are similar to controls,
+     * but are not associated with a DOM element.
+     * For example, {@link module:ol/interaction/KeyboardZoom~KeyboardZoom} is
+     * functionally the same as {@link module:ol/control/Zoom~Zoom}, but triggered
+     * by a keyboard event not a button element event.
+     * Although interactions do not have a DOM element, some of them do render
+     * vectors and so are visible on the screen.
+     * @api
+     */
+    var Interaction = /** @class */ (function (_super) {
+        __extends$P(Interaction, _super);
+        /**
+         * @param {InteractionOptions=} opt_options Options.
+         */
+        function Interaction(opt_options) {
+            var _this = _super.call(this) || this;
+            if (opt_options && opt_options.handleEvent) {
+                _this.handleEvent = opt_options.handleEvent;
+            }
+            /**
+             * @private
+             * @type {import("../PluggableMap.js").default}
+             */
+            _this.map_ = null;
+            _this.setActive(true);
+            return _this;
+        }
+        /**
+         * Return whether the interaction is currently active.
+         * @return {boolean} `true` if the interaction is active, `false` otherwise.
+         * @observable
+         * @api
+         */
+        Interaction.prototype.getActive = function () {
+            return /** @type {boolean} */ (this.get(InteractionProperty.ACTIVE));
+        };
+        /**
+         * Get the map associated with this interaction.
+         * @return {import("../PluggableMap.js").default} Map.
+         * @api
+         */
+        Interaction.prototype.getMap = function () {
+            return this.map_;
+        };
+        /**
+         * Handles the {@link module:ol/MapBrowserEvent map browser event}.
+         * @param {import("../MapBrowserEvent.js").default} mapBrowserEvent Map browser event.
+         * @return {boolean} `false` to stop event propagation.
+         * @api
+         */
+        Interaction.prototype.handleEvent = function (mapBrowserEvent) {
+            return true;
+        };
+        /**
+         * Activate or deactivate the interaction.
+         * @param {boolean} active Active.
+         * @observable
+         * @api
+         */
+        Interaction.prototype.setActive = function (active) {
+            this.set(InteractionProperty.ACTIVE, active);
+        };
+        /**
+         * Remove the interaction from its current map and attach it to the new map.
+         * Subclasses may set up event handlers to get notified about changes to
+         * the map here.
+         * @param {import("../PluggableMap.js").default} map Map.
+         */
+        Interaction.prototype.setMap = function (map) {
+            this.map_ = map;
+        };
+        return Interaction;
+    }(BaseObject));
+
+    /**
      * @module ol/MapBrowserEventType
      */
     /**
@@ -39813,7 +40052,7 @@
         POINTERCANCEL: 'pointercancel',
     };
 
-    var __extends$P = (undefined && undefined.__extends) || (function () {
+    var __extends$Q = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -39864,7 +40103,7 @@
      * @api
      */
     var PointerInteraction = /** @class */ (function (_super) {
-        __extends$P(PointerInteraction, _super);
+        __extends$Q(PointerInteraction, _super);
         /**
          * @param {Options=} opt_options Options.
          */
@@ -40420,7 +40659,7 @@
         return area;
     }
 
-    var __extends$Q = (undefined && undefined.__extends) || (function () {
+    var __extends$R = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -40441,7 +40680,7 @@
      * @api
      */
     var LinearRing = /** @class */ (function (_super) {
-        __extends$Q(LinearRing, _super);
+        __extends$R(LinearRing, _super);
         /**
          * @param {Array<import("../coordinate.js").Coordinate>|Array<number>} coordinates Coordinates.
          *     For internal use, flat coordinates in combination with `opt_layout` are also accepted.
@@ -40554,7 +40793,7 @@
         return LinearRing;
     }(SimpleGeometry));
 
-    var __extends$R = (undefined && undefined.__extends) || (function () {
+    var __extends$S = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -40574,7 +40813,7 @@
      * @api
      */
     var Point = /** @class */ (function (_super) {
-        __extends$R(Point, _super);
+        __extends$S(Point, _super);
         /**
          * @param {import("../coordinate.js").Coordinate} coordinates Coordinates.
          * @param {import("./GeometryLayout.js").default=} opt_layout Layout.
@@ -40974,7 +41213,7 @@
         return offset;
     }
 
-    var __extends$S = (undefined && undefined.__extends) || (function () {
+    var __extends$T = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -40994,7 +41233,7 @@
      * @api
      */
     var Polygon = /** @class */ (function (_super) {
-        __extends$S(Polygon, _super);
+        __extends$T(Polygon, _super);
         /**
          * @param {!Array<Array<import("../coordinate.js").Coordinate>>|!Array<number>} coordinates
          *     Array of linear rings that define the polygon. The first linear ring of the
@@ -41270,7 +41509,7 @@
         return Polygon;
     }(SimpleGeometry));
 
-    var __extends$T = (undefined && undefined.__extends) || (function () {
+    var __extends$U = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -41290,7 +41529,7 @@
      * @api
      */
     var Circle = /** @class */ (function (_super) {
-        __extends$T(Circle, _super);
+        __extends$U(Circle, _super);
         /**
          * @param {!import("../coordinate.js").Coordinate} center Center.
          *     For internal use, flat coordinates in combination with `opt_layout` and no
@@ -41530,7 +41769,7 @@
      */
     Circle.prototype.transform;
 
-    var __extends$U = (undefined && undefined.__extends) || (function () {
+    var __extends$V = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -41595,7 +41834,7 @@
      * @template {import("./geom/Geometry.js").default} Geometry
      */
     var Feature = /** @class */ (function (_super) {
-        __extends$U(Feature, _super);
+        __extends$V(Feature, _super);
         /**
          * @param {Geometry|Object<string, *>=} opt_geometryOrProperties
          *     You may pass a Geometry object directly, or an object literal containing
@@ -41818,7 +42057,7 @@
         }
     }
 
-    var __extends$V = (undefined && undefined.__extends) || (function () {
+    var __extends$W = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -41838,7 +42077,7 @@
      * @api
      */
     var LineString = /** @class */ (function (_super) {
-        __extends$V(LineString, _super);
+        __extends$W(LineString, _super);
         /**
          * @param {Array<import("../coordinate.js").Coordinate>|Array<number>} coordinates Coordinates.
          *     For internal use, flat coordinates in combination with `opt_layout` are also accepted.
@@ -42036,7 +42275,7 @@
         return LineString;
     }(SimpleGeometry));
 
-    var __extends$W = (undefined && undefined.__extends) || (function () {
+    var __extends$X = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -42055,7 +42294,7 @@
      * See {@link module:ol/PluggableMap~PluggableMap} for which events trigger a map event.
      */
     var MapEvent = /** @class */ (function (_super) {
-        __extends$W(MapEvent, _super);
+        __extends$X(MapEvent, _super);
         /**
          * @param {string} type Event type.
          * @param {import("./PluggableMap.js").default} map Map.
@@ -42080,7 +42319,7 @@
         return MapEvent;
     }(BaseEvent));
 
-    var __extends$X = (undefined && undefined.__extends) || (function () {
+    var __extends$Y = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -42100,7 +42339,7 @@
      * @template {UIEvent} EVENT
      */
     var MapBrowserEvent = /** @class */ (function (_super) {
-        __extends$X(MapBrowserEvent, _super);
+        __extends$Y(MapBrowserEvent, _super);
         /**
          * @param {string} type Event type.
          * @param {import("./PluggableMap.js").default} map Map.
@@ -42195,7 +42434,7 @@
         return MapBrowserEvent;
     }(MapEvent));
 
-    var __extends$Y = (undefined && undefined.__extends) || (function () {
+    var __extends$Z = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -42215,7 +42454,7 @@
      * @api
      */
     var MultiLineString = /** @class */ (function (_super) {
-        __extends$Y(MultiLineString, _super);
+        __extends$Z(MultiLineString, _super);
         /**
          * @param {Array<Array<import("../coordinate.js").Coordinate>|LineString>|Array<number>} coordinates
          *     Coordinates or LineString geometries. (For internal use, flat coordinates in
@@ -42450,7 +42689,7 @@
         return MultiLineString;
     }(SimpleGeometry));
 
-    var __extends$Z = (undefined && undefined.__extends) || (function () {
+    var __extends$_ = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -42470,7 +42709,7 @@
      * @api
      */
     var MultiPoint = /** @class */ (function (_super) {
-        __extends$Z(MultiPoint, _super);
+        __extends$_(MultiPoint, _super);
         /**
          * @param {Array<import("../coordinate.js").Coordinate>|Array<number>} coordinates Coordinates.
          *     For internal use, flat coordinates in combination with `opt_layout` are also accepted.
@@ -42620,7 +42859,7 @@
         return MultiPoint;
     }(SimpleGeometry));
 
-    var __extends$_ = (undefined && undefined.__extends) || (function () {
+    var __extends$$ = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -42640,7 +42879,7 @@
      * @api
      */
     var MultiPolygon = /** @class */ (function (_super) {
-        __extends$_(MultiPolygon, _super);
+        __extends$$(MultiPolygon, _super);
         /**
          * @param {Array<Array<Array<import("../coordinate.js").Coordinate>>|Polygon>|Array<number>} coordinates Coordinates.
          *     For internal use, flat coordinates in combination with `opt_layout` and `opt_endss` are also accepted.
@@ -42961,7 +43200,7 @@
         return MultiPolygon;
     }(SimpleGeometry));
 
-    var __extends$$ = (undefined && undefined.__extends) || (function () {
+    var __extends$10 = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -42980,7 +43219,7 @@
      * @api
      */
     var CanvasVectorLayerRenderer = /** @class */ (function (_super) {
-        __extends$$(CanvasVectorLayerRenderer, _super);
+        __extends$10(CanvasVectorLayerRenderer, _super);
         /**
          * @param {import("../../layer/Vector.js").default} vectorLayer Vector layer.
          */
@@ -43480,7 +43719,7 @@
         return CanvasVectorLayerRenderer;
     }(CanvasLayerRenderer));
 
-    var __extends$10 = (undefined && undefined.__extends) || (function () {
+    var __extends$11 = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -43504,7 +43743,7 @@
      * @api
      */
     var VectorLayer = /** @class */ (function (_super) {
-        __extends$10(VectorLayer, _super);
+        __extends$11(VectorLayer, _super);
         /**
          * @param {import("./BaseVector.js").Options=} opt_options Options.
          */
@@ -43787,7 +44026,7 @@
     /**
      * @module ol/source/Vector
      */
-    var __extends$11 = (undefined && undefined.__extends) || (function () {
+    var __extends$12 = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -43815,7 +44054,7 @@
      * @template {import("../geom/Geometry.js").default} Geometry
      */
     var VectorSourceEvent = /** @class */ (function (_super) {
-        __extends$11(VectorSourceEvent, _super);
+        __extends$12(VectorSourceEvent, _super);
         /**
          * @param {string} type Type.
          * @param {import("../Feature.js").default<Geometry>=} opt_feature Feature.
@@ -43938,7 +44177,7 @@
      * @template {import("../geom/Geometry.js").default} Geometry
      */
     var VectorSource = /** @class */ (function (_super) {
-        __extends$11(VectorSource, _super);
+        __extends$12(VectorSource, _super);
         /**
          * @param {Options=} opt_options Vector source options.
          */
@@ -44733,7 +44972,7 @@
         return VectorSource;
     }(Source));
 
-    var __extends$12 = (undefined && undefined.__extends) || (function () {
+    var __extends$13 = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -44863,7 +45102,7 @@
      * instances of this type.
      */
     var DrawEvent = /** @class */ (function (_super) {
-        __extends$12(DrawEvent, _super);
+        __extends$13(DrawEvent, _super);
         /**
          * @param {DrawEventType} type Type.
          * @param {Feature} feature The feature drawn.
@@ -44888,7 +45127,7 @@
      * @api
      */
     var Draw = /** @class */ (function (_super) {
-        __extends$12(Draw, _super);
+        __extends$13(Draw, _super);
         /**
          * @param {Options} options Options.
          */
@@ -45781,33 +46020,6 @@
     }
 
     /**
-     * @module ol/MapEventType
-     */
-    /**
-     * @enum {string}
-     */
-    var MapEventType = {
-        /**
-         * Triggered after a map frame is rendered.
-         * @event module:ol/MapEvent~MapEvent#postrender
-         * @api
-         */
-        POSTRENDER: 'postrender',
-        /**
-         * Triggered when the map starts moving.
-         * @event module:ol/MapEvent~MapEvent#movestart
-         * @api
-         */
-        MOVESTART: 'movestart',
-        /**
-         * Triggered after the map is moved.
-         * @event module:ol/MapEvent~MapEvent#moveend
-         * @api
-         */
-        MOVEEND: 'moveend',
-    };
-
-    /**
      * @module ol/OverlayPositioning
      */
     /**
@@ -45828,7 +46040,7 @@
         TOP_RIGHT: 'top-right',
     };
 
-    var __extends$13 = (undefined && undefined.__extends) || (function () {
+    var __extends$14 = (undefined && undefined.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -45932,7 +46144,7 @@
      * @api
      */
     var Overlay = /** @class */ (function (_super) {
-        __extends$13(Overlay, _super);
+        __extends$14(Overlay, _super);
         /**
          * @param {Options} options Overlay options.
          */
@@ -46342,16 +46554,20 @@
     const measureLayerId = 'measureLayer';
     const continuePolygonMsg = '单击确定地点，双击结束';
     const continueLineMsg = '单击确定地点，双击结束';
-    class Measure extends Interaction {
-      constructor(options = {}) {
-        super();
+    class Measure {
+      constructor(map, options = {}) {
+        if (!map) {
+          console.error("map is required");
+          return;
+        }
+
+        this.map_ = map;
         this.style_ = options.style || this.createDefaultStyle_();
         this.source_ = options.source || new VectorSource();
       }
 
       excute(type, doOnce = true) {
         this.doOnce_ = doOnce;
-        this.map_ = this.getMap();
         const geometryType = type === 'area' ? 'Polygon' : 'LineString';
 
         if (this.drawInteraction_) {
@@ -46373,9 +46589,17 @@
       }
 
       stop() {
-        this.map_.removeOverlay(this.helpTooltip_);
-        this.map_.removeInteraction(this.drawInteraction_);
-        unByKey(this.mapMoveListener_);
+        if (this.helpTooltip_) {
+          this.map_.removeOverlay(this.helpTooltip_);
+        }
+
+        if (this.helpTooltip_.drawInteraction_) {
+          this.map_.removeInteraction(this.drawInteraction_);
+        }
+
+        if (this.mapMoveListener_) {
+          unByKey(this.mapMoveListener_);
+        }
       }
 
       createDraw_(type) {
@@ -46441,9 +46665,9 @@
         setTimeout(() => {
           this.updateDblClickInteraction_(true);
         }, 1000);
-        this.measureTooltipElement_.className = 'ol-tooltip ol-tooltip-static';
+        this.measureTooltipElement_.className = 'oles-tooltip oles-tooltip-static';
         const closeElement = document.createElement('span');
-        closeElement.className = 'ol-tooltip-close';
+        closeElement.className = 'oles-tooltip-close';
         closeElement.innerHTML = 'X';
         this.measureTooltipElement_.appendChild(closeElement);
         this.measureTooltip_.setOffset([0, -7]);
@@ -46485,7 +46709,7 @@
         }
 
         this.helpTooltipElement_ = document.createElement('div');
-        this.helpTooltipElement_.className = 'ol-tooltip hidden';
+        this.helpTooltipElement_.className = 'oles-tooltip hidden';
         this.helpTooltip_ = new Overlay({
           element: this.helpTooltipElement_,
           offset: [15, 0],
@@ -46500,7 +46724,7 @@
         }
 
         this.measureTooltipElement_ = document.createElement('div');
-        this.measureTooltipElement_.className = 'ol-tooltip ol-tooltip-measure';
+        this.measureTooltipElement_.className = 'oles-tooltip oles-tooltip-measure';
         this.measureTooltip_ = new Overlay({
           element: this.measureTooltipElement_,
           offset: [0, -15],
@@ -46538,9 +46762,9 @@
         let output;
 
         if (area > 10000) {
-          output = `<font class='ol-tooltip-value'>${Math.round(area / 1000000 * 100) / 100}</font> 平方千米`;
+          output = `<font class='oles-tooltip-value'>${Math.round(area / 1000000 * 100) / 100}</font> 平方千米`;
         } else {
-          output = `<font class='ol-tooltip-value'>${Math.round(area * 100) / 100}</font> 平方米`;
+          output = `<font class='oles-tooltip-value'>${Math.round(area * 100) / 100}</font> 平方米`;
         }
 
         return output;
@@ -46553,9 +46777,9 @@
         let output;
 
         if (length > 100) {
-          output = `<font class='ol-tooltip-value'>${Math.round(length / 1000 * 100) / 100}</font> 千米`;
+          output = `<font class='oles-tooltip-value'>${Math.round(length / 1000 * 100) / 100}</font> 千米`;
         } else {
-          output = `<font class='ol-tooltip-value'>${Math.round(length * 100) / 100}</font> 米`;
+          output = `<font class='oles-tooltip-value'>${Math.round(length * 100) / 100}</font> 米`;
         }
 
         return output;
@@ -46590,15 +46814,59 @@
 
     }
 
-    class FullScreen extends Interaction {
+    class Measure$1 extends Control {
       constructor(options = {}) {
-        super(options);
+        super({
+          element: document.createElement('div'),
+          target: options.target
+        });
+        const areaLabel = options.label !== undefined ? options.label : 'A';
+        const areaTipLabel = options.tipLabel !== undefined ? options.tipLabel : '测量面积';
+        const lengthLabel = options.label !== undefined ? options.label : 'L';
+        const lengthTipLabel = options.tipLabel !== undefined ? options.tipLabel : '测量长度';
+        const cssClasses = `${CLASS_UNSELECTABLE} oles-control oles-flex oles-measure`;
+        this.element.className = cssClasses;
+        this.createButton_(areaLabel, areaTipLabel, this.element, 'area');
+        const divider = document.createElement('div');
+        divider.className = 'oles-button-divider';
+        this.element.appendChild(divider);
+        this.createButton_(lengthLabel, lengthTipLabel, this.element, 'length');
+      }
+
+      createButton_(label, tipLabel, element, type) {
+        const button = document.createElement('div');
+        button.className = 'oles-button';
+        button.title = tipLabel;
+        button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
+        button.addEventListener(EventType.CLICK, this.handleClick_.bind(this, type), false);
+        element.appendChild(button);
+      }
+
+      handleClick_(type, event) {
+        event.preventDefault();
+        this.measure_(type);
+      }
+
+      measure_(type) {
+        const map = this.getMap();
+
+        if (!this.measureTool) {
+          this.measureTool = new Measure(map);
+        }
+
+        this.measureTool.excute(type);
+      }
+
+    }
+
+    class FullScreen {
+      constructor(options = {}) {
         this.targetElement_ = typeof options.target === 'string' ? document.getElementById(options.target) : options.target;
       }
 
       entry() {
         if (!this.isSupported_() || this.isFullScreen_()) return;
-        const elem = this.targetElement_ || this.getMap().getTargetElement() || document;
+        const elem = this.targetElement_ || document.body;
 
         if (elem.webkitRequestFullScreen) {
           elem.webkitRequestFullScreen();
@@ -46628,7 +46896,7 @@
         }
       }
 
-      getState() {
+      getActive() {
         return this.isFullScreen_();
       }
 
@@ -46643,19 +46911,55 @@
 
     }
 
+    class FullScreen$1 extends Control {
+      constructor(options = {}) {
+        super({
+          element: document.createElement('div'),
+          target: options.target
+        });
+        const label = options.label !== undefined ? options.label : 'F';
+        const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '全屏';
+        const button = document.createElement('div');
+        button.className = 'oles-button';
+        button.title = tipLabel;
+        button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
+        button.addEventListener(EventType.CLICK, this.handleClick_.bind(this), false);
+        const cssClasses = `${CLASS_UNSELECTABLE} oles-control oles-full-screen`;
+        this.element.className = cssClasses;
+        this.element.appendChild(button);
+      }
+
+      handleClick_(event) {
+        event.preventDefault();
+        this.fullScreen_();
+      }
+
+      fullScreen_() {
+        if (!this.fullScreenTool) {
+          this.fullScreenTool = new FullScreen();
+        }
+
+        if (this.fullScreenTool.getActive()) {
+          this.fullScreenTool.exit();
+        } else {
+          this.fullScreenTool.entry();
+        }
+      }
+
+    }
+
     const FilterMode = {
       GRAY: 'gray'
     };
-    class Filter extends Interaction {
+    class Filter {
       constructor(options = {}) {
-        super();
         this.layers_ = options.layers || [];
         this.mode_ = options.mode || FilterMode.GRAY;
-        this.state_ = false;
+        this.active_ = false;
       }
 
       render() {
-        this.state_ = true;
+        this.active_ = true;
         this.layers_.forEach(layer => {
           const context = layer.getRenderer().context;
           this.filter_(context);
@@ -46665,15 +46969,15 @@
       }
 
       reset() {
-        this.state_ = false;
+        this.active_ = false;
         this.layers_.forEach(layer => {
           unByKey(layer.listener_);
           layer.setOpacity(layer.getOpacity() === 1 ? 0.99 : 1); // TODO：使地图刷新
         });
       }
 
-      getState() {
-        return this.state_;
+      getActive() {
+        return this.active_;
       }
 
       getMode() {
@@ -46718,21 +47022,68 @@
 
     }
 
-    class Swipe extends Interaction {
+    class Filter$1 extends Control {
       constructor(options = {}) {
-        super();
+        super({
+          element: document.createElement('div'),
+          target: options.target
+        });
+        this.layers_ = options.layers;
+        const label = options.label !== undefined ? options.label : 'F';
+        const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '滤镜';
+        const button = document.createElement('div');
+        button.className = 'oles-button';
+        button.title = tipLabel;
+        button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
+        button.addEventListener(EventType.CLICK, this.handleClick_.bind(this), false);
+        const cssClasses = `${CLASS_UNSELECTABLE} oles-control oles-filter`;
+        this.element.className = cssClasses;
+        this.element.appendChild(button);
+      }
+
+      handleClick_(event) {
+        event.preventDefault();
+        this.mapFilter_();
+      }
+
+      mapFilter_() {
+        if (!this.filterTool) {
+          const layers = this.layers_ || this.getMap().getLayers().getArray();
+          this.filterTool = new Filter({
+            layers
+          });
+        }
+
+        if (!this.filterTool.getActive()) {
+          this.filterTool.render();
+        } else {
+          this.filterTool.reset();
+        }
+      }
+
+    }
+
+    class Swipe {
+      constructor(map, options = {}) {
+        if (!map) {
+          console.error("map is required");
+          return;
+        }
+
+        this.map_ = map;
         this.layers_ = options.layers || [];
         this.position_ = options.position || 0.5; // [0,1]
 
         this.direction_ = options.direction || 'vertical'; // vertical|horizontal
 
-        this.state_ = false;
+        this.active_ = false;
         this.listeners_ = [];
       }
 
       render() {
+        this.reset();
         this.createSlider_();
-        this.state_ = true;
+        this.active_ = true;
         this.listeners_ = [];
         this.layers_.forEach(layer => {
           const preListener = layer.on('prerender', this.handlePreRender_.bind(this));
@@ -46740,21 +47091,21 @@
           const postListener = layer.on('postrender', this.handlePostRender_.bind(this));
           this.listeners_.push(postListener);
         });
-        this.getMap().renderSync();
+        this.map_.renderSync();
       }
 
       reset() {
         this.removeSlider_();
-        this.state_ = false;
+        this.active_ = false;
         this.listeners_.forEach(listener => {
           unByKey(listener);
         });
         this.listeners_ = [];
-        this.getMap().renderSync();
+        this.map_.renderSync();
       }
 
-      getState() {
-        return this.state_;
+      getActive() {
+        return this.active_;
       }
 
       setLayers(layers) {
@@ -46764,7 +47115,8 @@
 
       setDirection(direction) {
         this.direction_ = direction;
-        this.render();
+        this.render(); // this.removeSlider_();
+        // this.createSlider_();
       }
 
       getDirection() {
@@ -46785,13 +47137,13 @@
         const sliderElem = document.createElement('div');
 
         if (this.direction_ === 'horizontal') {
-          sliderElem.className = `ol-swipe-slider horizontal`;
-          const mapWidth = this.getMap().getSize()[0];
-          sliderElem.style.left = this.position_ * mapWidth;
+          sliderElem.className = `oles-swipe-slider horizontal`;
+          const mapWidth = this.map_.getSize()[0];
+          sliderElem.style.left = this.position_ * mapWidth + 'px';
         } else {
-          sliderElem.className = `ol-swipe-slider vertical`;
-          const mapHeight = this.getMap().getSize()[1];
-          sliderElem.style.top = this.position_ * mapHeight;
+          sliderElem.className = `oles-swipe-slider vertical`;
+          const mapHeight = this.map_.getSize()[1];
+          sliderElem.style.top = this.position_ * mapHeight + 'px';
         }
 
         sliderElem.addEventListener("mousedown", this.handleMouseDown_.bind(this));
@@ -46799,14 +47151,14 @@
         document.body.addEventListener("mouseleave", this.handleMouseLeave_.bind(this));
         document.body.addEventListener("mousemove", this.handleMouseMove_.bind(this));
         this.sliderElem_ = sliderElem;
-        const mapElem = this.getMap().getTargetElement();
+        const mapElem = this.map_.getTargetElement();
         mapElem.style.position = 'relative';
         mapElem.appendChild(sliderElem);
       }
 
       removeSlider_() {
         if (!this.sliderElem_) return;
-        const mapElem = this.getMap().getTargetElement();
+        const mapElem = this.map_.getTargetElement();
         mapElem.style = undefined;
         mapElem.removeChild(this.sliderElem_);
         this.sliderElem_ = undefined;
@@ -46855,381 +47207,35 @@
       }
 
       handleMouseDown_(e) {
-        this.active_ = true;
+        this.mouseActive_ = true;
       }
 
       handleMouseUp_(e) {
-        this.active_ = false;
+        this.mouseActive_ = false;
       }
 
       handleMouseLeave_(e) {
-        this.active_ = false;
+        this.mouseActive_ = false;
       }
 
       handleMouseMove_(e) {
-        if (!this.active_) return;
+        if (!this.mouseActive_) return;
 
         if (this.direction_ === 'horizontal') {
           let clientX = e.clientX;
-          const offsetLeft = clientX - this.getMap().getTargetElement().getBoundingClientRect().left;
-          this.sliderElem_.style.left = offsetLeft;
-          const mapWidth = this.getMap().getSize()[0];
+          const offsetLeft = clientX - this.map_.getTargetElement().getBoundingClientRect().left;
+          this.sliderElem_.style.left = offsetLeft + 'px';
+          const mapWidth = this.map_.getSize()[0];
           this.position_ = offsetLeft / mapWidth;
         } else {
           let clientY = e.clientY;
-          const offsetTop = clientY - this.getMap().getTargetElement().getBoundingClientRect().top;
-          this.sliderElem_.style.top = offsetTop;
-          const mapHeight = this.getMap().getSize()[1];
+          const offsetTop = clientY - this.map_.getTargetElement().getBoundingClientRect().top;
+          this.sliderElem_.style.top = offsetTop + 'px';
+          const mapHeight = this.map_.getSize()[1];
           this.position_ = offsetTop / mapHeight;
         }
 
-        this.getMap().renderSync();
-      }
-
-    }
-
-    var interaction = {
-      Snapshot,
-      Measure,
-      FullScreen,
-      Filter,
-      Swipe
-    };
-
-    var __extends$14 = (undefined && undefined.__extends) || (function () {
-        var extendStatics = function (d, b) {
-            extendStatics = Object.setPrototypeOf ||
-                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-                function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-            return extendStatics(d, b);
-        };
-        return function (d, b) {
-            extendStatics(d, b);
-            function __() { this.constructor = d; }
-            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-        };
-    })();
-    /**
-     * @typedef {Object} Options
-     * @property {HTMLElement} [element] The element is the control's
-     * container element. This only needs to be specified if you're developing
-     * a custom control.
-     * @property {function(import("../MapEvent.js").default):void} [render] Function called when
-     * the control should be re-rendered. This is called in a `requestAnimationFrame`
-     * callback.
-     * @property {HTMLElement|string} [target] Specify a target if you want
-     * the control to be rendered outside of the map's viewport.
-     */
-    /**
-     * @classdesc
-     * A control is a visible widget with a DOM element in a fixed position on the
-     * screen. They can involve user input (buttons), or be informational only;
-     * the position is determined using CSS. By default these are placed in the
-     * container with CSS class name `ol-overlaycontainer-stopevent`, but can use
-     * any outside DOM element.
-     *
-     * This is the base class for controls. You can use it for simple custom
-     * controls by creating the element with listeners, creating an instance:
-     * ```js
-     * var myControl = new Control({element: myElement});
-     * ```
-     * and then adding this to the map.
-     *
-     * The main advantage of having this as a control rather than a simple separate
-     * DOM element is that preventing propagation is handled for you. Controls
-     * will also be objects in a {@link module:ol/Collection~Collection}, so you can use their methods.
-     *
-     * You can also extend this base for your own control class. See
-     * examples/custom-controls for an example of how to do this.
-     *
-     * @api
-     */
-    var Control = /** @class */ (function (_super) {
-        __extends$14(Control, _super);
-        /**
-         * @param {Options} options Control options.
-         */
-        function Control(options) {
-            var _this = _super.call(this) || this;
-            var element = options.element;
-            if (element && !options.target && !element.style.pointerEvents) {
-                element.style.pointerEvents = 'auto';
-            }
-            /**
-             * @protected
-             * @type {HTMLElement}
-             */
-            _this.element = element ? element : null;
-            /**
-             * @private
-             * @type {HTMLElement}
-             */
-            _this.target_ = null;
-            /**
-             * @private
-             * @type {import("../PluggableMap.js").default}
-             */
-            _this.map_ = null;
-            /**
-             * @protected
-             * @type {!Array<import("../events.js").EventsKey>}
-             */
-            _this.listenerKeys = [];
-            if (options.render) {
-                _this.render = options.render;
-            }
-            if (options.target) {
-                _this.setTarget(options.target);
-            }
-            return _this;
-        }
-        /**
-         * Clean up.
-         */
-        Control.prototype.disposeInternal = function () {
-            removeNode(this.element);
-            _super.prototype.disposeInternal.call(this);
-        };
-        /**
-         * Get the map associated with this control.
-         * @return {import("../PluggableMap.js").default} Map.
-         * @api
-         */
-        Control.prototype.getMap = function () {
-            return this.map_;
-        };
-        /**
-         * Remove the control from its current map and attach it to the new map.
-         * Subclasses may set up event handlers to get notified about changes to
-         * the map here.
-         * @param {import("../PluggableMap.js").default} map Map.
-         * @api
-         */
-        Control.prototype.setMap = function (map) {
-            if (this.map_) {
-                removeNode(this.element);
-            }
-            for (var i = 0, ii = this.listenerKeys.length; i < ii; ++i) {
-                unlistenByKey(this.listenerKeys[i]);
-            }
-            this.listenerKeys.length = 0;
-            this.map_ = map;
-            if (this.map_) {
-                var target = this.target_
-                    ? this.target_
-                    : map.getOverlayContainerStopEvent();
-                target.appendChild(this.element);
-                if (this.render !== VOID) {
-                    this.listenerKeys.push(listen(map, MapEventType.POSTRENDER, this.render, this));
-                }
-                map.render();
-            }
-        };
-        /**
-         * Renders the control.
-         * @param {import("../MapEvent.js").default} mapEvent Map event.
-         * @api
-         */
-        Control.prototype.render = function (mapEvent) { };
-        /**
-         * This function is used to set a target element for the control. It has no
-         * effect if it is called after the control has been added to the map (i.e.
-         * after `setMap` is called on the control). If no `target` is set in the
-         * options passed to the control constructor and if `setTarget` is not called
-         * then the control is added to the map's overlay container.
-         * @param {HTMLElement|string} target Target.
-         * @api
-         */
-        Control.prototype.setTarget = function (target) {
-            this.target_ =
-                typeof target === 'string' ? document.getElementById(target) : target;
-        };
-        return Control;
-    }(BaseObject));
-
-    var FileSaver_min = createCommonjsModule$1(function (module, exports) {
-    (function(a,b){b();})(commonjsGlobal$1,function(){function b(a,b){return "undefined"==typeof b?b={autoBom:!1}:"object"!=typeof b&&(console.warn("Deprecated: Expected third argument to be a object"),b={autoBom:!b}),b.autoBom&&/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(a.type)?new Blob(["\uFEFF",a],{type:a.type}):a}function c(a,b,c){var d=new XMLHttpRequest;d.open("GET",a),d.responseType="blob",d.onload=function(){g(d.response,b,c);},d.onerror=function(){console.error("could not download file");},d.send();}function d(a){var b=new XMLHttpRequest;b.open("HEAD",a,!1);try{b.send();}catch(a){}return 200<=b.status&&299>=b.status}function e(a){try{a.dispatchEvent(new MouseEvent("click"));}catch(c){var b=document.createEvent("MouseEvents");b.initMouseEvent("click",!0,!0,window,0,0,0,80,20,!1,!1,!1,!1,0,null),a.dispatchEvent(b);}}var f="object"==typeof window&&window.window===window?window:"object"==typeof self&&self.self===self?self:"object"==typeof commonjsGlobal$1&&commonjsGlobal$1.global===commonjsGlobal$1?commonjsGlobal$1:void 0,a=f.navigator&&/Macintosh/.test(navigator.userAgent)&&/AppleWebKit/.test(navigator.userAgent)&&!/Safari/.test(navigator.userAgent),g=f.saveAs||("object"!=typeof window||window!==f?function(){}:"download"in HTMLAnchorElement.prototype&&!a?function(b,g,h){var i=f.URL||f.webkitURL,j=document.createElement("a");g=g||b.name||"download",j.download=g,j.rel="noopener","string"==typeof b?(j.href=b,j.origin===location.origin?e(j):d(j.href)?c(b,g,h):e(j,j.target="_blank")):(j.href=i.createObjectURL(b),setTimeout(function(){i.revokeObjectURL(j.href);},4E4),setTimeout(function(){e(j);},0));}:"msSaveOrOpenBlob"in navigator?function(f,g,h){if(g=g||f.name||"download","string"!=typeof f)navigator.msSaveOrOpenBlob(b(f,h),g);else if(d(f))c(f,g,h);else {var i=document.createElement("a");i.href=f,i.target="_blank",setTimeout(function(){e(i);});}}:function(b,d,e,g){if(g=g||open("","_blank"),g&&(g.document.title=g.document.body.innerText="downloading..."),"string"==typeof b)return c(b,d,e);var h="application/octet-stream"===b.type,i=/constructor/i.test(f.HTMLElement)||f.safari,j=/CriOS\/[\d]+/.test(navigator.userAgent);if((j||h&&i||a)&&"undefined"!=typeof FileReader){var k=new FileReader;k.onloadend=function(){var a=k.result;a=j?a:a.replace(/^data:[^;]*;/,"data:attachment/file;"),g?g.location.href=a:location=a,g=null;},k.readAsDataURL(b);}else {var l=f.URL||f.webkitURL,m=l.createObjectURL(b);g?g.location=m:location.href=m,g=null,setTimeout(function(){l.revokeObjectURL(m);},4E4);}});f.saveAs=g.saveAs=g,(module.exports=g);});
-
-
-    });
-
-    class Snapshot$1 extends Control {
-      constructor(options = {}) {
-        super({
-          element: document.createElement('div'),
-          target: options.target
-        });
-        const className = options.className !== undefined ? options.className : 'ol-snapshot';
-        const label = options.label !== undefined ? options.label : 'S';
-        const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '快照';
-        const button = document.createElement('button');
-        button.setAttribute('type', 'button');
-        button.title = tipLabel;
-        button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
-        button.addEventListener(EventType.CLICK, this.handleClick_.bind(this), false);
-        const cssClasses = className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
-        const element = this.element;
-        element.className = cssClasses;
-        element.appendChild(button);
-      }
-
-      handleClick_(event) {
-        event.preventDefault();
-        this.mapToImage_();
-      }
-
-      mapToImage_() {
-        const map = this.getMap();
-        let snapshotInteraction = map.getInteractions().getArray().find(interaction => {
-          return interaction instanceof Snapshot;
-        });
-
-        if (!snapshotInteraction) {
-          snapshotInteraction = new Snapshot();
-          map.addInteraction(snapshotInteraction);
-          snapshotInteraction.on('complete', evt => {
-            FileSaver_min(evt.imageData, `MAP-${Math.round(Math.random() * 89999 + 10000)}.png`);
-          });
-        }
-
-        snapshotInteraction.toImage();
-      }
-
-    }
-
-    class Measure$1 extends Control {
-      constructor(options = {}) {
-        super({
-          element: document.createElement('div'),
-          target: options.target
-        });
-        const areaLabel = options.label !== undefined ? options.label : 'A';
-        const areaTipLabel = options.tipLabel !== undefined ? options.tipLabel : '测量面积';
-        const lengthLabel = options.label !== undefined ? options.label : 'L';
-        const lengthTipLabel = options.tipLabel !== undefined ? options.tipLabel : '测量长度';
-        const className = options.className !== undefined ? options.className : 'ol-measure';
-        const cssClasses = className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
-        const element = this.element;
-        element.className = cssClasses;
-        this.createButton_(areaLabel, areaTipLabel, element, 'area');
-        this.createButton_(lengthLabel, lengthTipLabel, element, 'length');
-      }
-
-      createButton_(label, tipLabel, element, type) {
-        const button = document.createElement('button');
-        button.setAttribute('type', 'button');
-        button.title = tipLabel;
-        button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
-        button.addEventListener(EventType.CLICK, this.handleClick_.bind(this, type), false);
-        element.appendChild(button);
-      }
-
-      handleClick_(type, event) {
-        event.preventDefault();
-        this.measure_(type);
-      }
-
-      measure_(type) {
-        const map = this.getMap();
-        let measureInteraction = map.getInteractions().getArray().find(interaction => {
-          return interaction instanceof Measure;
-        });
-
-        if (!measureInteraction) {
-          measureInteraction = new Measure();
-          map.addInteraction(measureInteraction);
-        }
-
-        measureInteraction.excute(type);
-      }
-
-    }
-
-    class FullScreen$1 extends Control {
-      constructor(options = {}) {
-        super({
-          element: document.createElement('div'),
-          target: options.target
-        });
-        const className = options.className !== undefined ? options.className : 'ol-full-screen';
-        const label = options.label !== undefined ? options.label : 'F';
-        const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '全屏';
-        const button = document.createElement('button');
-        button.setAttribute('type', 'button');
-        button.title = tipLabel;
-        button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
-        button.addEventListener(EventType.CLICK, this.handleClick_.bind(this), false);
-        const cssClasses = className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
-        const element = this.element;
-        element.className = cssClasses;
-        element.appendChild(button);
-      }
-
-      handleClick_(event) {
-        event.preventDefault();
-        this.fullScreen_();
-      }
-
-      fullScreen_() {
-        const map = this.getMap();
-        let fullScreenInteraction = map.getInteractions().getArray().find(interaction => interaction instanceof FullScreen);
-
-        if (!fullScreenInteraction) {
-          fullScreenInteraction = new FullScreen();
-          map.addInteraction(fullScreenInteraction);
-        }
-
-        if (fullScreenInteraction.getState()) {
-          fullScreenInteraction.exit();
-        } else {
-          fullScreenInteraction.entry();
-        }
-      }
-
-    }
-
-    class Filter$1 extends Control {
-      constructor(options = {}) {
-        super({
-          element: document.createElement('div'),
-          target: options.target
-        });
-        this.layers_ = options.layers || [];
-        const className = options.className !== undefined ? options.className : 'ol-filter';
-        const label = options.label !== undefined ? options.label : 'F';
-        const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '滤镜';
-        const button = document.createElement('button');
-        button.setAttribute('type', 'button');
-        button.title = tipLabel;
-        button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
-        button.addEventListener(EventType.CLICK, this.handleClick_.bind(this), false);
-        const cssClasses = className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
-        const element = this.element;
-        element.className = cssClasses;
-        element.appendChild(button);
-      }
-
-      handleClick_(event) {
-        event.preventDefault();
-        this.filter_();
-      }
-
-      filter_() {
-        const map = this.getMap();
-        let filterInteraction = map.getInteractions().getArray().find(interaction => interaction instanceof Filter);
-
-        if (!filterInteraction) {
-          filterInteraction = new Filter({
-            layers: this.layers_
-          });
-          map.addInteraction(filterInteraction);
-        }
-
-        if (!filterInteraction.getState()) {
-          filterInteraction.render();
-        } else {
-          filterInteraction.reset();
-        }
+        this.map_.renderSync();
       }
 
     }
@@ -47245,17 +47251,18 @@
         const horizontalTipLabel = options.horizontalTipLabel !== undefined ? options.horizontalTipLabel : '横向卷帘对比';
         const verticalLabel = options.verticalLabel !== undefined ? options.verticalLabel : 'V';
         const verticalTipLabel = options.verticalTipLabel !== undefined ? options.verticalTipLabel : '竖向卷帘对比';
-        const className = options.className !== undefined ? options.className : 'ol-swipe';
-        const cssClasses = className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
-        const element = this.element;
-        element.className = cssClasses;
-        this.createButton_(horizontalLabel, horizontalTipLabel, element, 'horizontal');
-        this.createButton_(verticalLabel, verticalTipLabel, element, 'vertical');
+        const cssClasses = `${CLASS_UNSELECTABLE} oles-control oles-flex oles-swipe`;
+        this.element.className = cssClasses;
+        this.createButton_(horizontalLabel, horizontalTipLabel, this.element, 'horizontal');
+        const divider = document.createElement('div');
+        divider.className = 'oles-button-divider';
+        this.element.appendChild(divider);
+        this.createButton_(verticalLabel, verticalTipLabel, this.element, 'vertical');
       }
 
       createButton_(label, tipLabel, element, type) {
-        const button = document.createElement('button');
-        button.setAttribute('type', 'button');
+        const button = document.createElement('div');
+        button.className = 'oles-button';
         button.title = tipLabel;
         button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
         button.addEventListener(EventType.CLICK, this.handleClick_.bind(this, type), false);
@@ -47269,26 +47276,29 @@
 
       swipe_(type) {
         const map = this.getMap();
-        let swipeInteraction = map.getInteractions().getArray().find(interaction => interaction instanceof Swipe);
 
-        if (!swipeInteraction) {
-          swipeInteraction = new Swipe({
+        if (!this.swipeTool) {
+          this.swipeTool = new Swipe(map, {
             layers: this.layers_,
             direction: type
           });
-          map.addInteraction(swipeInteraction);
         }
 
-        if (!swipeInteraction.getState()) {
-          swipeInteraction.render();
+        const direction = this.swipeTool.getDirection();
+        direction !== type && this.swipeTool.setDirection(type);
+
+        if (!this.swipeTool.getActive()) {
+          this.swipeTool.render();
         } else {
-          swipeInteraction.reset();
+          direction === type && this.swipeTool.reset();
         }
       }
 
     }
 
     var control = {
+      Container,
+      Box: Container$1,
       Snapshot: Snapshot$1,
       Measure: Measure$1,
       FullScreen: FullScreen$1,
@@ -47296,12 +47306,20 @@
       Swipe: Swipe$1
     };
 
+    var tool = {
+      Snapshot,
+      Measure,
+      FullScreen,
+      Filter,
+      Swipe
+    };
+
     var oles = {
       layer: layer$1,
       source: source$1,
       proj,
-      interaction,
-      control
+      control,
+      tool
     };
 
     return oles;

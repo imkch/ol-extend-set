@@ -1,17 +1,17 @@
-.ol-swipe-slider {
+.oles-swipe-slider {
   position: absolute;
   background: #999;
 }
-.ol-swipe-slider.horizontal {
+.oles-swipe-slider.horizontal {
   width: 4px;
   height: 100%;
   left: 50%;
   top: 0;
   margin-left: -2px;
-  cursor: col-resize;
+  cursor: coles-resize;
 }
 
-.ol-swipe-slider.vertical {
+.oles-swipe-slider.vertical {
   width: 100%;
   height: 4px;
   left: 0;

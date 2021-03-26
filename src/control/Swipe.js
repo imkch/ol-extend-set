@@ -1,8 +1,8 @@
 import Control from 'ol/control/Control';
 import EventType from 'ol/events/EventType';
-import { CLASS_CONTROL, CLASS_UNSELECTABLE } from 'ol/css';
+import { CLASS_UNSELECTABLE } from 'ol/css';
 
-import SwipeInteraction from '../interaction/Swipe';
+import SwipeTool from '../tool/Swipe';
 
 export default class Swipe extends Control {
   constructor(options = {}) {
@@ -18,18 +18,18 @@ export default class Swipe extends Control {
     const verticalLabel = options.verticalLabel !== undefined ? options.verticalLabel : 'V';
     const verticalTipLabel = options.verticalTipLabel !== undefined ? options.verticalTipLabel : '竖向卷帘对比';
 
-    const className = options.className !== undefined ? options.className : 'ol-swipe';
-    const cssClasses =
-      className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
-    const element = this.element;
-    element.className = cssClasses;
+    const cssClasses = `${CLASS_UNSELECTABLE} oles-control oles-flex oles-swipe`;
+    this.element.className = cssClasses;
 
-    this.createButton_(horizontalLabel, horizontalTipLabel, element, 'horizontal');
-    this.createButton_(verticalLabel, verticalTipLabel, element, 'vertical');
+    this.createButton_(horizontalLabel, horizontalTipLabel, this.element, 'horizontal');
+    const divider = document.createElement('div');
+    divider.className = 'oles-button-divider';
+    this.element.appendChild(divider);
+    this.createButton_(verticalLabel, verticalTipLabel, this.element, 'vertical');
   }
   createButton_(label, tipLabel, element, type) {
-    const button = document.createElement('button');
-    button.setAttribute('type', 'button');
+    const button = document.createElement('div');
+    button.className = 'oles-button';
     button.title = tipLabel;
     button.appendChild(
       typeof label === 'string' ? document.createTextNode(label) : label
@@ -48,18 +48,15 @@ export default class Swipe extends Control {
   }
   swipe_(type) {
     const map = this.getMap();
-    let swipeInteraction = map
-      .getInteractions()
-      .getArray()
-      .find(interaction => interaction instanceof SwipeInteraction);
-    if(!swipeInteraction) {
-      swipeInteraction = new SwipeInteraction({layers: this.layers_, direction: type});
-      map.addInteraction(swipeInteraction);
+    if(!this.swipeTool) {
+      this.swipeTool = new SwipeTool(map, {layers: this.layers_, direction: type});
     }
-    if(!swipeInteraction.getState()) {
-      swipeInteraction.render();
+    const direction = this.swipeTool.getDirection();
+    direction !== type &&  this.swipeTool.setDirection(type);
+    if(!this.swipeTool.getActive()) {
+      this.swipeTool.render();
     } else {
-      swipeInteraction.reset();
+      direction === type && this.swipeTool.reset();
     }
   }
 };

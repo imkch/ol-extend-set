@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -5,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css">
   <link rel="stylesheet" href="./lib/oles.css">
-  <title>卷帘对比</title>
+  <title>控制器布局</title>
   <style>
     html,body {
       height: 100%;
@@ -13,11 +14,6 @@
     }
     #map {
       height: 100%;
-    }
-    .oles-swipe {
-      position: absolute;
-      top: .5em;
-      right: .5em;
     }
   </style>
 </head>
@@ -53,10 +49,48 @@
         imgLayer
       ]
     });
-    const swipe = new oles.control.Swipe({
-      layers: [imgLayer]
-    });
-    map.addControl(swipe);
+    const boxControl = {
+      instance: new oles.control.Box(),
+      children: [
+        {
+          instance: new oles.control.Container({ position: 'top-right'}),
+          children: [
+            {
+              instance: new oles.control.Swipe({layers: [imgLayer]}),
+            },
+            {
+              instance: new oles.control.Measure(),
+            }
+          ]
+        },
+        {
+          instance: new oles.control.Container({ position: 'bottom-right', direction: 'column-reverse'}),
+          children: [
+            {
+              instance: new oles.control.Snapshot(),
+            },
+            {
+              instance: new oles.control.Filter(),
+            },
+            {
+              instance: new oles.control.FullScreen(),
+            }
+          ]
+        }
+      ]
+    };
+    const addControlChildren = (control) => {
+      const { instance, children } = control;
+      if(children && children.length >0) {
+        children.forEach(item => {
+          instance.appendChild(item.instance);
+          addControlChildren(item);
+        });
+      }
+      
+    };
+    map.addControl(boxControl.instance);
+    addControlChildren(boxControl);
   </script>
 </body>
 </html>

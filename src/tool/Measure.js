@@ -1,4 +1,4 @@
-import { Interaction, Draw, DoubleClickZoom } from 'ol/interaction';
+import { Draw, DoubleClickZoom } from 'ol/interaction';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import Overlay from 'ol/Overlay';
@@ -15,15 +15,18 @@ const measureLayerId = 'measureLayer';
 const continuePolygonMsg = '单击确定地点，双击结束';
 const continueLineMsg = '单击确定地点，双击结束';
 
-export default class Measure extends Interaction {
-  constructor(options = {}) {
-    super();
+export default class Measure {
+  constructor(map, options = {}) {
+    if (!map) {
+      console.error("map is required");
+      return;
+    }
+    this.map_ = map;
     this.style_ = options.style || this.createDefaultStyle_();
     this.source_ = options.source || new VectorSource();
   }
   excute(type, doOnce = true) {
     this.doOnce_ = doOnce;
-    this.map_ = this.getMap();
     const geometryType = type === 'area' ? 'Polygon' : 'LineString';
     if (this.drawInteraction_) {
       this.map_.removeInteraction(this.drawInteraction_);
@@ -40,9 +43,15 @@ export default class Measure extends Interaction {
     this.mapMoveListener_ = this.map_.on('pointermove', this.handlePointerMove_.bind(this));
   }
   stop() {
-    this.map_.removeOverlay(this.helpTooltip_);
-    this.map_.removeInteraction(this.drawInteraction_);
-    unByKey(this.mapMoveListener_);
+    if (this.helpTooltip_) {
+      this.map_.removeOverlay(this.helpTooltip_);
+    }
+    if (this.helpTooltip_.drawInteraction_) {
+      this.map_.removeInteraction(this.drawInteraction_);
+    }
+    if (this.mapMoveListener_) {
+      unByKey(this.mapMoveListener_);
+    }
   }
   createDraw_(type) {
     const draw = new Draw({type, style: this.style_, source: this.source_, freehand: false});
@@ -96,9 +105,9 @@ export default class Measure extends Interaction {
     setTimeout(() => {
       this.updateDblClickInteraction_(true);
     }, 1000);
-    this.measureTooltipElement_.className = 'ol-tooltip ol-tooltip-static';
+    this.measureTooltipElement_.className = 'oles-tooltip oles-tooltip-static';
     const closeElement = document.createElement('span');
-    closeElement.className = 'ol-tooltip-close';
+    closeElement.className = 'oles-tooltip-close';
     closeElement.innerHTML = 'X';
     this.measureTooltipElement_.appendChild(closeElement);
     this.measureTooltip_.setOffset([0, -7]);
@@ -136,7 +145,7 @@ export default class Measure extends Interaction {
       this.helpTooltipElement_.parentNode.removeChild(this.helpTooltipElement_);
     }
     this.helpTooltipElement_ = document.createElement('div');
-    this.helpTooltipElement_.className = 'ol-tooltip hidden';
+    this.helpTooltipElement_.className = 'oles-tooltip hidden';
     this.helpTooltip_ = new Overlay({
       element: this.helpTooltipElement_,
       offset: [15, 0],
@@ -149,7 +158,7 @@ export default class Measure extends Interaction {
       this.measureTooltipElement_.parentNode.removeChild(this.measureTooltipElement_);
     }
     this.measureTooltipElement_ = document.createElement('div');
-    this.measureTooltipElement_.className = 'ol-tooltip ol-tooltip-measure';
+    this.measureTooltipElement_.className = 'oles-tooltip oles-tooltip-measure';
     this.measureTooltip_ = new Overlay({
       element: this.measureTooltipElement_,
       offset: [0, -15],
@@ -182,11 +191,11 @@ export default class Measure extends Interaction {
     });
     let output;
     if (area > 10000) {
-      output = `<font class='ol-tooltip-value'>${Math.round(
+      output = `<font class='oles-tooltip-value'>${Math.round(
         (area / 1000000) * 100
       ) / 100}</font> 平方千米`;
     } else {
-      output = `<font class='ol-tooltip-value'>${Math.round(area * 100) /
+      output = `<font class='oles-tooltip-value'>${Math.round(area * 100) /
         100}</font> 平方米`;
     }
     return output;
@@ -197,11 +206,11 @@ export default class Measure extends Interaction {
     });
     let output;
     if (length > 100) {
-      output = `<font class='ol-tooltip-value'>${Math.round(
+      output = `<font class='oles-tooltip-value'>${Math.round(
         (length / 1000) * 100
       ) / 100}</font> 千米`;
     } else {
-      output = `<font class='ol-tooltip-value'>${Math.round(length * 100) /
+      output = `<font class='oles-tooltip-value'>${Math.round(length * 100) /
         100}</font> 米`;
     }
     return output;

@@ -1,0 +1,28 @@
+.oles-control {
+  box-shadow: 0 0 0.52em 0.21em rgba(0,0,0,.1);
+  border-radius: 4px;
+}
+.oles-control .oles-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  color: #333;
+  font-size: 1.14em;
+  font-weight: 700;
+  height: 1.75em;
+  width: 1.75em;
+  cursor: pointer;
+}
+.oles-control .oles-button:hover {
+  background-color: #eee;
+}
+.oles-control .oles-button-divider {
+  height: 2em;
+  width: 1px;
+  background-color: #eee;
+}
+
+.oles-flex {
+  display: flex;
+}
