@@ -14,9 +14,22 @@
     "OpenLayers",
     "map",
     "extend",
-    "ol-extend-set"
+    "ol-extend-set",
+    "oles"
   ],
-  "author": "坤尘",
+  "homepage": "https://github.com/imkch/ol-extend-set#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/imkch/ol-extend-set.git"
+  },
+  "bugs": {
+    "url": "https://github.com/imkch/ol-extend-set/issues"
+  },
+  "author": {
+    "name": "坤尘",
+    "email": "kunchen@imkch.com",
+    "url": "https://imkch.com"
+  },
   "license": "MIT",
   "dependencies": {
     "dom-to-image": "^2.6.0",
