@@ -4,7 +4,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css">
-  <link rel="stylesheet" href="./lib/oles.css">
+  <link rel="stylesheet" href="./oles/index.css">
   <title>卷帘对比</title>
   <style>
     html,body {
@@ -24,11 +24,11 @@
 <body>
   <div id="map"></div>
   <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/build/ol.js"></script>
-  <script src="./lib/oles.js"></script>
+  <script src="./oles/index.js"></script>
   <script>
     const vecLayer = new ol.layer.Tile({
       source: new oles.source.TDT({
-        tk: '5d4236a2a06043cd0b0880bbf270c958',
+        token: '5d4236a2a06043cd0b0880bbf270c958',
         layer: 'vec',
         matrixSet: 'w',
         crossOrigin: 'anonymous'
@@ -36,7 +36,7 @@
     });
     const imgLayer = new ol.layer.Tile({
       source: new oles.source.TDT({
-        tk: '5d4236a2a06043cd0b0880bbf270c958',
+        token: '5d4236a2a06043cd0b0880bbf270c958',
         layer: 'img',
         matrixSet: 'w',
         crossOrigin: 'anonymous'

@@ -5,49 +5,62 @@ import WMTSCapabilities from 'ol/format/WMTSCapabilities';
 export default class TileWMTS extends Tile {
   constructor(options) {
     const source = options.source;
-    source && delete options.source
+    source && delete options.source;
     super(options);
-    this.credentials_ = options.withCredentials ? 'include' : 'omit';
-    this.headers_ = options.headers || {};
-    source && this.setSource_(source);
+    this.capableLoadFunction = options.capableLoadFunction || this.capableLoadFunction_;
+    if (source) {
+      this.fetchCapabilities_(source);
+    } else {
+      console.error('source is required');
+    }
   }
-  setSource_(source) {
+  capableLoadFunction_(url, parser) {
+    return fetch(url)
+      .then(response => response.text())
+      .then(data => {
+        parser(data);
+      });
+  }
+  fetchCapabilities_(source) {
     const urls = source.getUrls();
     if (!urls || urls.length < 1) {
-      console.error("url is required");
+      console.error('url is required');
       return;
     }
-    let layer = source.getLayer();
-    let matrixSet = source.getMatrixSet();
-    let style = source.getStyle();
+    this.layer_ = source.getLayer();
+    this.matrixSet_ = source.getMatrixSet();
+    this.style_ = source.getStyle();
     const url = `${urls[0]}${urls[0].indexOf('?') > -1 ? '&' : '?'}request=GetCapabilities&service=wmts`;
-    fetch(url, { headers: this.headers_, credentials: this.credentials_ })
-      .then(response => response.text())
-      .then(text => {
-        const parser = new WMTSCapabilities();
-        const result = parser.read(text);
-        const layers = result.Contents.Layer;
-        let layerNode = layers[0];
-        if (!layer) {
-          layer = layerNode.Identifier;
-        }
-        layers.forEach(item => {
-          if (item.Identifier === layer) {
-            layerNode = item;
-          }
-        });
-        if (!matrixSet) {
-          if (layerNode.Identifier === layer) {
-            matrixSet = layerNode.TileMatrixSetLink[0].TileMatrixSet;
-          }
-        }
-        if (!style) {
-          if (layerNode.Identifier === layer) {
-            style = layerNode.Style[0].Identifier;
-          }
-        }
-        const options = optionsFromCapabilities(result, { layer, matrixSet, style, urls });
-        this.setSource(new WMTS(options));
-      });
+    this.capableLoadFunction(url, this.parserCapabilities_.bind(this));
+  }
+  parserCapabilities_(text) {
+    const parser = new WMTSCapabilities();
+    const result = parser.read(text);
+    const layers = result.Contents.Layer;
+    let layerNode = layers[0];
+    if (!this.layer_) {
+      this.layer_ = layerNode.Identifier;
+    }
+    layers.forEach(item => {
+      if (item.Identifier === this.layer_) {
+        layerNode = item;
+      }
+    });
+    if (!this.matrixSet_) {
+      if (layerNode.Identifier === this.layer_) {
+        this.matrixSet_ = layerNode.TileMatrixSetLink[0].TileMatrixSet;
+      }
+    }
+    if (!this.style_) {
+      if (layerNode.Identifier === this.layer_) {
+        this.style_ = layerNode.Style[0].Identifier;
+      }
+    }
+    const options = optionsFromCapabilities(result, {
+      layer: this.layer_,
+      matrixSet: this.matrixSet_,
+      style: this.style_
+    });
+    this.setSource(new WMTS(options));
   }
 }

@@ -42,6 +42,10 @@ const default3857TileGrid = function() {
 
 export default class TDT extends WMTS {
   constructor(options) {
+    if (!options.token) {
+      console.error('token is required');
+      return;
+    }
     const matrixSet = options.matrixSet || 'c';
     const layer = options.layer || 'vec';
     const defaultOptions = {
@@ -50,7 +54,7 @@ export default class TDT extends WMTS {
       format: 'tiles',
       layer,
       matrixSet,
-      url: `http://t{0-7}.tianditu.gov.cn/${layer}_${matrixSet}/wmts?tk=${options.tk}`
+      url: `http://t{0-7}.tianditu.gov.cn/${layer}_${matrixSet}/wmts?tk=${options.token}`
     };
     super(Object.assign(defaultOptions, options));
   }

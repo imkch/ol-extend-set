@@ -1,8 +1,8 @@
 {
   "name": "ol-extend-set",
   "version": "1.0.0",
-  "description": "OpenLayer扩展工具",
-  "main": "lib/oles.js",
+  "description": "基于OpenLayers的扩展类集合",
+  "main": "index.js",
   "scripts": {
     "dev": "watch 'node rollup.config.dev' src",
     "build": "node rollup.config.build",
@@ -11,8 +11,10 @@
   },
   "keywords": [
     "ol",
-    "OpenLayer",
-    "map"
+    "OpenLayers",
+    "map",
+    "extend",
+    "ol-extend-set"
   ],
   "author": "坤尘",
   "license": "MIT",
@@ -33,6 +35,7 @@
     "rollup-plugin-css-porter": "^1.0.2",
     "rollup-plugin-json": "^4.0.0",
     "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-svg": "^2.0.0",
     "rollup-plugin-terser": "^7.0.2",
     "vuepress": "^1.8.0",
     "vuepress-plugin-demo-container": "^0.2.0",

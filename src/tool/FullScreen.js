@@ -1,10 +1,10 @@
 export default class FullScreen {
   constructor(options ={}) {
-    this.targetElement_ = typeof options.target === 'string' ? document.getElementById(options.target) : options.target;
+    this.targetElement_ = (typeof options.target === 'string' ? document.getElementById(options.target) : options.target) || document.body;
   }
   entry() {
     if(!this.isSupported_() || this.isFullScreen_()) return;
-    const elem = this.targetElement_ || document.body;
+    const elem = this.targetElement_;
     if (elem.webkitRequestFullScreen) {
       elem.webkitRequestFullScreen();
     } else if (elem.mozRequestFullScreen) {

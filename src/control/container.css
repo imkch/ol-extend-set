@@ -21,18 +21,6 @@
   bottom: 0;
   right: 0;
 }
-.oles-row {
-  flex-direction: row;
-}
-.oles-column {
-  flex-direction: column;
-}
-.oles-row-reverse {
-  flex-direction: row-reverse;
-}
-.oles-column-reverse {
-  flex-direction: column-reverse;
-}
 .oles-container .ol-control {
   position: relative;
 }

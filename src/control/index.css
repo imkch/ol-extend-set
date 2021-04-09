@@ -1,3 +1,6 @@
+.ol-control {
+  display: none !important;
+}
 .oles-control {
   box-shadow: 0 0 0.52em 0.21em rgba(0,0,0,.1);
   border-radius: 4px;
@@ -17,7 +20,17 @@
 .oles-control .oles-button:hover {
   background-color: #eee;
 }
-.oles-control .oles-button-divider {
+.oles-control .oles-icon {
+  height: 1em;
+  width: 1em;
+}
+.oles-divider-horizontal {
+  height: 1px;
+  width: 2em;
+  background-color: #eee;
+}
+
+.oles-divider-vertical {
   height: 2em;
   width: 1px;
   background-color: #eee;
@@ -25,4 +38,17 @@
 
 .oles-flex {
   display: flex;
+}
+
+.oles-row {
+  flex-direction: row;
+}
+.oles-column {
+  flex-direction: column;
+}
+.oles-row-reverse {
+  flex-direction: row-reverse;
+}
+.oles-column-reverse {
+  flex-direction: column-reverse;
 }

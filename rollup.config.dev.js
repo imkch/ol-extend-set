@@ -1,14 +1,19 @@
 const rollup = require('rollup');
-const lodash = require('lodash');
+const css = require('rollup-plugin-css-porter');
 
 const config = require('./rollup.config.base.js');
 
-config.input = 'src/oles.js';
+config.input = 'src/index.js';
 Object.assign(config.output, {
-  file: 'docs/.vuepress/public/demo/lib/oles.js',
+  file: 'docs/.vuepress/public/demo/oles/index.js',
   name: 'oles'
 });
-
+config.plugins.push(
+  css({
+    raw: 'docs/.vuepress/public/demo/oles/index.css',
+    minified: false
+  })
+);
 rollup.rollup(config)
   .then(bundle => {
     bundle.write(config.output);

@@ -4,20 +4,19 @@ import { CLASS_UNSELECTABLE } from 'ol/css';
 import fileSaver from 'file-saver';
 
 import SnapshotTool from '../tool/Snapshot';
+
+import snapshotSvg from '../icon/snapshot.svg';
 export default class Snapshot extends Control {
   constructor(options = {}) {
-    super({
-      element: document.createElement('div'),
-      target: options.target
-    });
-    const label = options.label !== undefined ? options.label : 'S';
-    const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '快照';
+    options.element = options.element || document.createElement('div');
+    super(options);
+
+    const icon = options.icon ? (typeof options.icon === 'string' ? this.createIcon_(options.icon) : options.icon) : this.createIcon_(snapshotSvg);
+    const label = options.label !== undefined ? options.label : '快照';
     const button = document.createElement('div');
     button.className = 'oles-button';
-    button.title = tipLabel;
-    button.appendChild(
-      typeof label === 'string' ? document.createTextNode(label) : label
-    );
+    button.title = label;
+    button.appendChild(icon);
 
     button.addEventListener(
       EventType.CLICK,
@@ -29,15 +28,19 @@ export default class Snapshot extends Control {
     this.element.className = cssClasses;
     this.element.appendChild(button);
   }
+  createIcon_(source) {
+    const icon = document.createElement('img');
+    icon.src = source;
+    icon.className = 'oles-icon';
+    return icon;
+  }
   handleClick_(event) {
     event.preventDefault();
     this.mapToImage_();
   }
   mapToImage_() {
     if(!this.snapshotTool) {
-      this.snapshotTool = new SnapshotTool({filter: node => {
-        return (node.className !== 'ol-overlaycontainer-stopevent');
-      }});
+      this.snapshotTool = new SnapshotTool();
     }
     const mapElement = this.getMap().getTargetElement();
     this.snapshotTool.toImage(mapElement).then(data => {

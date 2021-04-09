@@ -4,23 +4,20 @@ import { CLASS_UNSELECTABLE } from 'ol/css';
 
 import FilterTool from '../tool/Filter';
 
+import filterSvg from '../icon/filter.svg';
 export default class Filter extends Control {
   constructor(options = {}) {
-    super({
-      element: document.createElement('div'),
-      target: options.target
-    });
+    options.element = options.element || document.createElement('div');
+    super(options);
 
     this.layers_ = options.layers;
 
-    const label = options.label !== undefined ? options.label : 'F';
-    const tipLabel = options.tipLabel !== undefined ? options.tipLabel : '滤镜';
+    const icon = options.icon ? (typeof options.icon === 'string' ? this.createIcon_(options.icon) : options.icon) : this.createIcon_(filterSvg);
+    const label = options.label !== undefined ? options.label : '滤镜';
     const button = document.createElement('div');
     button.className = 'oles-button';
-    button.title = tipLabel;
-    button.appendChild(
-      typeof label === 'string' ? document.createTextNode(label) : label
-    );
+    button.title = label;
+    button.appendChild(icon);
 
     button.addEventListener(
       EventType.CLICK,
@@ -31,6 +28,12 @@ export default class Filter extends Control {
     const cssClasses = `${CLASS_UNSELECTABLE} oles-control oles-filter`;
     this.element.className = cssClasses;
     this.element.appendChild(button);
+  }
+  createIcon_(source) {
+    const icon = document.createElement('img');
+    icon.src = source;
+    icon.className = 'oles-icon';
+    return icon;
   }
   handleClick_(event) {
     event.preventDefault();

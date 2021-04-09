@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css">
+  <title>加载OGC标准WMTS服务</title>
+  <style>
+    html,body {
+      height: 100%;
+      margin: 0;
+    }
+    #map {
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/build/ol.js"></script>
+  <script src="./oles/index.js"></script>
+  <script>
+    const url = 'https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/WMTS';
+    const layer = new oles.layer.TileWMTS({
+      source: new ol.source.WMTS({
+        url
+      }),
+      capableLoadFunction: (url, parser) => {
+        return fetch(url)
+          .then(response => response.text())
+          .then(data => {
+            parser(data);
+          });
+      }
+    });
+    const map = new ol.Map({
+      target: 'map',
+      view: new ol.View({
+        center: [0, 0],
+        zoom: 2
+      }),
+      layers: [
+        layer
+      ]
+    });
+  </script>
+</body>
+</html>

@@ -1,7 +1,8 @@
 const babel = require('rollup-plugin-babel');
 const commonjs = require('rollup-plugin-commonjs')
 const resolve = require('rollup-plugin-node-resolve');
-const css = require('rollup-plugin-css-porter');
+const svg = require('rollup-plugin-svg');
+
 
 const external = [
   'ol',
@@ -32,8 +33,8 @@ module.exports = {
     }),
     commonjs(),
     resolve(),
-    css({
-      minified: false
+    svg({
+      base64: true
     })
   ]
 };

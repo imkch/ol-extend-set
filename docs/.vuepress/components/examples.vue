@@ -26,9 +26,14 @@ export default {
           name: '数据源',
           demoList: [
             {
-              cover: '../img/wmts.png',
+              cover: '../img/custom-wmts.png',
+              name: '自定义加载OGC标准服务WMTS',
+              url: '../demo/custom-wmts.html'
+            },
+            {
+              cover: '../img/tile-wmts.png',
               name: '加载OGC标准服务WMTS',
-              url: '../demo/wmts.html'
+              url: '../demo/tile-wmts.html'
             },
             {
               cover: '../img/tdt.png',
@@ -73,8 +78,23 @@ export default {
           ]
         },
         {
-          name: '地图工具',
+          name: '地图控件',
           demoList: [
+            {
+              cover: '../img/control-layout.png',
+              name: 'Control布局',
+              url: '../demo/control-layout.html'
+            },
+            {
+              cover: '../img/zoom.png',
+              name: '地图缩放',
+              url: '../demo/zoom.html'
+            },
+            {
+              cover: '../img/full-extent.png',
+              name: '地图全图',
+              url: '../demo/full-extent.html'
+            },
             {
               cover: '../img/snapshot.png',
               name: '地图快照',
@@ -108,6 +128,9 @@ export default {
 }
 </script>
 <style>
+.examples {
+  margin-top: 16px;
+}
 .examples h2 {
   margin: 8px;
   border: none;

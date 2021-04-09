@@ -1,6 +1,6 @@
 import { unByKey } from 'ol/Observable';
 
-const FilterMode = {
+export const FilterMode = {
   GRAY: 'gray'
 };
 
@@ -37,7 +37,7 @@ export default class Filter {
     this.render();
   }
   setMode(mode) {
-    this.mode_ = mode;
+    this.mode_ = mode || FilterMode.GRAY;
     this.render();
   }
   handlePostRender_(e) {

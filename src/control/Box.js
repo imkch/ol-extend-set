@@ -1,14 +1,11 @@
 import Control from 'ol/control/Control';
-import { CLASS_UNSELECTABLE } from 'ol/css';
 
 import './box.css';
 
 export default class Container extends Control {
   constructor(options = {}) {
-    super({
-      element: document.createElement('div'),
-      target: options.target
-    });
+    options.element = options.element || document.createElement('div');
+    super(options);
 
     this.element.className = `oles-box`;
   }

@@ -1,6 +1,13 @@
 ---
 sidebar: false
 ---
+::: demo
+``` html
+<template>
+  <demo />
+</template>
+```
+:::
 
 ::: demo
 ``` html

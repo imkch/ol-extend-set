@@ -47,8 +47,6 @@ export default class Swipe {
   setDirection(direction) {
     this.direction_ = direction;
     this.render();
-    // this.removeSlider_();
-    // this.createSlider_();
   }
   getDirection() {
     return this.direction_;

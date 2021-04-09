@@ -1,20 +1,31 @@
-import VectorTileLayer from 'ol/layer/VectorTile';
+import VectorTile from 'ol/layer/VectorTile';
 import { loadVectorTileStyle } from '../style/vector-tile';
 
-export default class VectorTileArcGISRest extends VectorTileLayer {
+export default class VectorTileArcGISRest extends VectorTile {
   constructor(options) {
     const visible = typeof(options.visible) === 'undefined' ? true : options.visible;
     options.visible = false;
     super(options);
+    this.styleLoadFunction = options.styleLoadFunction || this.styleLoadFunction_;
     this.defaultVisible_ = visible;
-    this.credentials_ = options.withCredentials ? 'include' : 'omit';
-    this.headers_ = options.headers || {};
-    this.loadStyle_();
-  }
-  loadStyle_() {
     const source = this.getSource();
+    if (source) {
+      this.loadStyle_(source);
+    } else {
+      console.error('source is required');
+    }
+  }
+  styleLoadFunction_(url, load) {
+    return fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        load(data);
+      });
+  }
+  loadStyle_(source) {
     const styleUrl = source.getBaseUrl() + '/style.json';
     const spriteUrl = source.getBaseUrl() + '/sprites/sprite';
-    loadVectorTileStyle(this, styleUrl, spriteUrl, this.credentials_, this.headers_, this.defaultVisible_);
+    const layers = source.getLayers();
+    loadVectorTileStyle(this, styleUrl, spriteUrl, this.defaultVisible_, layers ,this.styleLoadFunction);
   }
 }

@@ -4,10 +4,8 @@ import './container.css';
 
 export default class Container extends Control {
   constructor(options = {}) {
-    super({
-      element: document.createElement('div'),
-      target: options.target
-    });
+    options.element = options.element || document.createElement('div');
+    super(options);
 
     const position = options.position || 'top-left';
     const direction = options.direction || 'row';

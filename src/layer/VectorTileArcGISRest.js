@@ -6,15 +6,26 @@ export default class VectorTileArcGISRest extends VectorTile {
     const visible = typeof(options.visible) === 'undefined' ? true : options.visible;
     options.visible = false;
     super(options);
+    this.styleLoadFunction = options.styleLoadFunction || this.styleLoadFunction_;
     this.defaultVisible_ = visible;
-    this.credentials_ = options.withCredentials ? 'include' : 'omit';
-    this.headers_ = options.headers || {};
-    this.loadStyle_();
-  }
-  loadStyle_() {
     const source = this.getSource();
+    if (source) {
+      this.loadStyle_(source);
+    } else {
+      console.error('source is required');
+    }
+  }
+  styleLoadFunction_(url, load) {
+    return fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        load(data);
+      });
+  }
+  loadStyle_(source) {
     const styleUrl = source.getBaseUrl() + '/resources/styles';
     const spriteUrl = source.getBaseUrl() + '/resources/sprites/sprite';
-    loadVectorTileStyle(this, styleUrl, spriteUrl, this.credentials_, this.headers_, this.defaultVisible_);
+    const layers = source.getLayers();
+    loadVectorTileStyle(this, styleUrl, spriteUrl, this.defaultVisible_, layers ,this.styleLoadFunction);
   }
 }

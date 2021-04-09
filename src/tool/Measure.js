@@ -1,4 +1,4 @@
-import { Draw, DoubleClickZoom } from 'ol/interaction';
+import { Draw } from 'ol/interaction';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import Overlay from 'ol/Overlay';
@@ -24,10 +24,14 @@ export default class Measure {
     this.map_ = map;
     this.style_ = options.style || this.createDefaultStyle_();
     this.source_ = options.source || new VectorSource();
+    this.active_ = false;
   }
-  excute(type, doOnce = true) {
+  excute(mode, doOnce = true) {
+    this.stop();
+    this.mode_ = mode;
+    this.active_ = true;
     this.doOnce_ = doOnce;
-    const geometryType = type === 'area' ? 'Polygon' : 'LineString';
+    const geometryType = mode === 'area' ? 'Polygon' : 'LineString';
     if (this.drawInteraction_) {
       this.map_.removeInteraction(this.drawInteraction_);
       this.drawInteraction_ = null;
@@ -43,15 +47,23 @@ export default class Measure {
     this.mapMoveListener_ = this.map_.on('pointermove', this.handlePointerMove_.bind(this));
   }
   stop() {
+    this.type_ = undefined;
+    this.active_ = false;
     if (this.helpTooltip_) {
       this.map_.removeOverlay(this.helpTooltip_);
     }
-    if (this.helpTooltip_.drawInteraction_) {
+    if (this.drawInteraction_) {
       this.map_.removeInteraction(this.drawInteraction_);
     }
     if (this.mapMoveListener_) {
       unByKey(this.mapMoveListener_);
     }
+  }
+  getActive() {
+    return this.active_;
+  }
+  getMode() {
+    return this.mode_;
   }
   createDraw_(type) {
     const draw = new Draw({type, style: this.style_, source: this.source_, freehand: false});
@@ -84,7 +96,7 @@ export default class Measure {
     this.measureLayer_ = measureLayer;
   }
   handleDrawStart_(evt) {
-    this.updateDblClickInteraction_(false);
+    this.updateInteractionActive_(false);
     this.sketch_ = evt.feature;
     let tooltipCoord = evt.coordinate;
     this.listener_ = this.sketch_.getGeometry().on('change', e => {
@@ -103,7 +115,7 @@ export default class Measure {
   }
   handleDrawEnd_(evt) {
     setTimeout(() => {
-      this.updateDblClickInteraction_(true);
+      this.updateInteractionActive_(true);
     }, 1000);
     this.measureTooltipElement_.className = 'oles-tooltip oles-tooltip-static';
     const closeElement = document.createElement('span');
@@ -225,20 +237,12 @@ export default class Measure {
     });
     return layerObj;
   }
-  updateDblClickInteraction_(enable) {
-    if (!this.dblClickInteraction_) {
-      this.dblClickInteraction_ = this.map_
-        .getInteractions()
-        .getArray()
-        .find(interaction => {
-          return interaction.ol_uid === '10'; // interaction instanceof DoubleClickZoom;
-        });
-    }
-    if (!this.dblClickInteraction_) return;
-    if (enable) {
-      this.map_.addInteraction(this.dblClickInteraction_);
-    } else {
-      this.map_.removeInteraction(this.dblClickInteraction_);
-    }
+  updateInteractionActive_(enable) {
+    const interactions = this.map_.getInteractions().getArray();
+    interactions.forEach(interaction => {
+      if (!(interaction instanceof Draw)) {
+        interaction.setActive(enable);
+      }
+    });
   };
 };
