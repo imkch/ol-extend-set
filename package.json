@@ -41,6 +41,7 @@
   "devDependencies": {
     "@babel/core": "^7.12.10",
     "@babel/preset-env": "^7.12.10",
+    "async-file": "^2.0.2",
     "lodash": "^4.17.20",
     "rollup": "^2.34.2",
     "rollup-plugin-babel": "^4.4.0",

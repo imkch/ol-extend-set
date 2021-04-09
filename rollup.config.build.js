@@ -2,6 +2,7 @@ const { terser }  = require('rollup-plugin-terser');
 const rollup = require('rollup');
 const lodash = require('lodash');
 const fs = require('fs');
+const afs = require('async-file');
 const css = require('rollup-plugin-css-porter');
 
 const transformStrName = (str) => {
@@ -16,23 +17,20 @@ const baseConfig = require('./rollup.config.base.js');
 const baseDir = 'src';
 const buildDir = 'oles';
 const excludeDir = 'icon';
-const readFileList = (folder = '/') => {
-  const files = fs.readdirSync(baseDir + folder);
-  files.forEach((fileName) => {
+const readFileList = async (folder = '/') => {
+  const files = await afs.readdir(baseDir + folder);
+  for (const fileName of files) {
     if(excludeDir.indexOf(fileName) < 0) {
       const filePath = baseDir + folder + fileName;
-      fs.stat(filePath, (err, stats) => {
-        if(err) throw err;
-        if(stats.isFile()) {
-          fileName.indexOf('.js') > -1 && buildFile(folder, fileName);
-        } else if(stats.isDirectory()) {
-          readFileList(folder + fileName + '/');
-        }
-      });
+      if((await afs.lstat(filePath)).isDirectory()) {
+        await readFileList(folder + fileName + '/');
+      } else {
+        fileName.indexOf('.js') > -1 && await buildFile(folder, fileName);
+      }
     }
-  });
+  }
 };
-const buildFile = (folder, file) => {
+const buildFile = async (folder, file) => {
   const config = lodash.cloneDeep(baseConfig);
   config.input = baseDir + folder + file;
   config.output.file = buildDir + folder + file;
@@ -48,17 +46,38 @@ const buildFile = (folder, file) => {
     })
   );
   config.plugins.push(terser());
-  rollup.rollup(config)
-    .then(bundle => {
-      bundle.write(config.output);
-    });
+  const bundle = await rollup.rollup(config);
+  bundle.write(config.output);
 };
-readFileList();
 
-const copyFiles = ['package.json', '.npmignore'];
-copyFiles.forEach(file => {
-  fs.copyFile(file, `oles/${file}`, error => {
-    if(error) console.log(error);
-    else console.log(`copy ${file} succeed`);
+const deleteFolder = async (path) => {
+  const exists = await afs.exists(path);
+  if (exists) {
+    const files = await afs.readdir(path);
+    for (const file of files) {
+      const curPath = path + '/' + file;
+      if((await afs.lstat(curPath)).isDirectory()) {
+        await deleteFolder(curPath);
+      } else {
+        await afs.unlink(curPath);
+      }
+    }
+    await afs.rmdir(path);
+  }
+};
+const copyFileList = (copyFiles) => {
+  copyFiles.forEach(file => {
+    fs.copyFile(file, `oles/${file}`, error => {
+      if(error) console.log(error);
+      else console.log(`copy ${file} succeed`);
+    });
   });
-});
+};
+
+(async function() {
+  await deleteFolder('oles');
+  await readFileList();
+  const files = ['package.json', '.npmignore', 'README.md']
+  copyFileList(files);
+})();
+
